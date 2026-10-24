@@ -31,7 +31,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.3
+VERSION=0.1.4
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -55,7 +55,7 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.3'
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.4'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -76,7 +76,16 @@ yuanbootctl-python run --reload
 | `console` | 命令行宿主与后台任务 |
 | `grpc` | gRPC 服务与健康检查 |
 
-模板包含项目元数据、配置、Dockerfile、Compose 和使用说明。
+模板包含项目元数据、配置、Dockerfile、Compose、README 和 `spec` 开发文档。
+每个新项目默认提供以下文档，可离线查阅：
+
+```text
+README.md
+spec/
+├── yuanboot-python.md             # 框架使用说明
+├── components.md                 # 核心组件配置与使用
+└── backend-module-development.md  # 后端模块开发规范
+```
 
 ```bash
 yuanbootctl-python new --list

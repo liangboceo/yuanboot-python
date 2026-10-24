@@ -7,8 +7,8 @@
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.3'
-yuanbootctl-python new mvc -n orders --framework-ref v0.1.3
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.4'
+yuanbootctl-python new mvc -n orders --framework-ref v0.1.4
 cd orders
 python -m pip install -e '.[dev,components]'
 yuanbootctl-python run
@@ -21,12 +21,12 @@ yuanbootctl-python run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.3",
+  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.4",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.3",
+  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.4",
 ]
 ```
 
@@ -40,7 +40,7 @@ components = [
 框架只有一个版本源：`src/yuanboot/_version.py`。Hatch 构建元数据、ctl 和 Nacos metadata 从这里取版本。
 业务项目自己管理版本，与框架版本互不绑定。
 
-- 补丁版本 `v0.1.3`：修复兼容问题。
+- 补丁版本 `v0.1.4`：修复兼容问题。
 - 次版本 `v0.2.0`：新增能力或 0.x 阶段的不兼容变化。
 - `v1.0.0` 后按语义化版本管理兼容性。
 
@@ -53,7 +53,7 @@ components = [
 
 1. 将待发布代码推送到 `master`。
 2. 打开仓库 **Actions → Build Release → Run workflow**，选择 `master`。
-3. 填写 `version`（例如 `0.1.3`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
+3. 填写 `version`（例如 `0.1.4`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
 4. 工作流同步版本源，在 Python 3.11–3.14 上构建包，并为各平台编译独立命令行工具。
 5. 全部通过后，提交版本变更到 `master`，创建 `v<version>` tag，生成 GitHub Release，上传可执行文件、wheel、sdist 和 SHA256SUMS。
 
@@ -61,7 +61,7 @@ components = [
 
 ```bash
 gh workflow run Release.yml --ref master \
-  -f version=0.1.3 -f prerelease=false -f draft=false
+  -f version=0.1.4 -f prerelease=false -f draft=false
 ```
 
 已存在的 tag 会被拒绝，不会覆盖。构建期间如果 `master` 有更新，发布中止，需从最新 `master` 重新运行。
@@ -80,6 +80,8 @@ python -m build
 首次发布后在仓库设置中将默认分支设为 `master`。
 `.github/workflows/ci.yml` 在 master、PR 和 tag 上构建 Python 3.11–3.14 包；构建 wheel/sdist 并保留 Actions 产物。
 框架 wheel 包含模板资源，sdist 明确排除本地环境、数据和凭据。
+所有模板默认生成 `README.md` 和 `spec` 文档目录，包含 `yuanboot-python.md`、
+`components.md` 和 `backend-module-development.md`；独立二进制内也包含这些资源。
 
 ## 锁定完整依赖
 

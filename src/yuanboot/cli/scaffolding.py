@@ -83,7 +83,9 @@ def create_project(
     substitutions = {
         "__PROJECT__": name,
         "__PACKAGE__": package,
+        "__TEMPLATE__": template,
         "__YUANBOOT_VERSION__": __version__,
+        "__FRAMEWORK_REF__": framework_ref or "v" + __version__,
         "__KIND__": "console" if template in {"console", "grpc"} else "web",
         "__YUANBOOT_REQUIREMENT__": json.dumps(
             framework_requirement(
