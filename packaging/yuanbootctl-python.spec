@@ -11,7 +11,7 @@ hiddenimports += ["sqlalchemy.dialects.mysql.pymysql", "sqlalchemy.dialects.sqli
 analysis = Analysis(
     [str(root / "src/yuanboot/cli/entrypoint.py")],
     pathex=[str(root / "src")],
-    datas=collect_data_files("yuanboot", includes=["cli/templates/**/*.tpl"])
+    datas=collect_data_files("yuanboot", includes=["cli/templates/**/*.tpl", "logging.json"])
     + copy_metadata("yuanboot"),
     hiddenimports=hiddenimports,
     excludes=["pytest", "IPython", "matplotlib", "numpy", "pandas", "tkinter"],

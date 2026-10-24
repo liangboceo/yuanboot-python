@@ -11,7 +11,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from yuanboot import __version__
-from yuanboot.cli.scaffolding import FRAMEWORK_REPOSITORY, TEMPLATES, create_project
+from yuanboot import logging as framework_logging
+from yuanboot.cli.scaffolding import TEMPLATES, create_project
 from yuanboot.configuration import ConfigurationBuilder
 from yuanboot.environment import PROFILES
 from yuanboot.web.application import server_address
@@ -56,8 +57,9 @@ def _parser():
     new.add_argument("-l", "--list", "--templates", action="store_true", dest="list_templates")
     new.add_argument("-n", "--name", "--projectName", default="demo")
     new.add_argument("-p", "--path", default=".")
-    new.add_argument("--framework-repo", default=FRAMEWORK_REPOSITORY)
-    new.add_argument("--framework-ref", default="v" + __version__)
+    new.add_argument("--framework-version", help="PyPI framework version (default: tool version)")
+    new.add_argument("--framework-repo", help="Use a Git repository instead of PyPI")
+    new.add_argument("--framework-ref", help="Use a Git ref instead of PyPI")
     run = commands.add_parser("run", help="Run the current project's web or console host")
     run.add_argument("-p", "--path", default=".")
     run.add_argument("--profile", choices=PROFILES)
@@ -124,6 +126,8 @@ def _run(args):
             str(port),
             "--workers",
             str(args.workers),
+            "--log-config",
+            str(Path(framework_logging.__file__).with_suffix(".json")),
         ]
         if args.reload:
             command.append("--reload")
@@ -217,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.path,
                     framework_repo=args.framework_repo,
                     framework_ref=args.framework_ref,
+                    framework_version=args.framework_version,
                 )
                 print(f"Created {args.template}: {destination}")
                 print(f'cd "{destination}"')

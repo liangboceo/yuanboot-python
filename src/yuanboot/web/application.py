@@ -9,8 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from yuanboot.branding import DOCUMENTATION_URL, PROJECT_URL, swagger_description
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import Host, HostBuilder
+from yuanboot.logging import server_log_config
 from yuanboot.web.middleware import HttpMetrics, RequestScopeMiddleware
 from yuanboot.web.mvc import ControllerBuilder
 from yuanboot.web.routing import RouterBuilder
@@ -72,6 +74,7 @@ class WebApplication(Host):
         await self.app(scope, receive, send)
 
     def run(self, *, host: str | None = None, port: int | None = None, **options):
+        options.setdefault("log_config", server_log_config())
         configured_host, configured_port = server_address(self.configuration)
         tls = self.configuration.get_section("yuanboot.application.server.tls")
         if tls.get_string("cert"):
@@ -112,8 +115,15 @@ class WebHostBuilder(HostBuilder):
             finally:
                 await host.stop()
 
-        options = {"title": environment.application_name, "version": environment.version}
+        options = {
+            "title": environment.application_name,
+            "version": environment.version,
+            "terms_of_service": DOCUMENTATION_URL,
+            "contact": {"name": "yuanboot", "url": PROJECT_URL},
+            "license_info": {"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
+        }
         options.update(self._fastapi_options)
+        options["description"] = swagger_description(options.get("description"))
         app = FastAPI(lifespan=lifespan, **options)
         builder = ApplicationBuilder(app, self.services, self.configuration)
         for configure in self._configures:

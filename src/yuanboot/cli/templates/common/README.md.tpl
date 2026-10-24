@@ -10,7 +10,7 @@
 | [核心组件](spec/components.md) | MySQL、Redis、Nacos、日志、服务发现与任务配置 |
 | [后端模块开发规范](spec/backend-module-development.md) | 业务分层、DTO、路由、事务和接口约定 |
 
-生成工具版本：`__YUANBOOT_VERSION__`；框架依赖引用：`__FRAMEWORK_REF__`。
+生成工具版本：`__YUANBOOT_VERSION__`；框架依赖：`__FRAMEWORK_REF__`。
 文档随项目生成，可离线查阅；后续业务规范可在 `spec` 中补充。
 
 ## 快速启动
@@ -22,11 +22,12 @@ python -m pip install -e ".[dev]"
 yuanbootctl-python run
 ```
 
-框架通过 `pyproject.toml` 中的 Git tag 依赖安装，无需 PyPI。
-项目的版本和框架版本各自维护。升级框架时修改 Git tag 并更新依赖 lock。
-也可将框架依赖改为公开 PyPI 的 `yuanboot==<version>`，组件依赖使用 `yuanboot[all]==<version>`；
-gRPC 项目的基础依赖使用 `yuanboot[grpc]==<version>`，版本应与需要的框架版本一致。
-私有仓库需要配置 Git SSH/HTTPS 访问权限；默认 Dockerfile 适用于公开 HTTPS 仓库。
+框架默认通过 `pyproject.toml` 从公开 PyPI 安装，依赖版本与生成工具的框架版本一致。
+基础依赖、`components` 中的全部组件以及 gRPC 依赖固定同一版本，发布新工具后自动使用新版本。
+已生成项目保留原版本；升级时统一修改框架版本并重新锁定依赖。
+可通过 `new --framework-version <version>` 选择其他 PyPI 版本；
+显式使用 `--framework-ref` 或 `--framework-repo` 时切换到 Git 依赖，安装环境需提供 Git。
+项目版本和框架版本各自维护。
 本地联调先安装完整框架 `pip install -e '/path/to/yuanboot_python[all]'`，
 再用 `pip install --no-deps -e .` 安装业务代码。
 

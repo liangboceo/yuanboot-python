@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "yuanboot": {"()": "yuanboot.logging.TextFormatter"}
+  },
+  "handlers": {
+    "console": {
+      "class": "logging.StreamHandler",
+      "formatter": "yuanboot",
+      "stream": "ext://sys.stdout"
+    }
+  },
+  "loggers": {
+    "uvicorn": {"handlers": ["console"], "level": "INFO", "propagate": false},
+    "uvicorn.error": {"level": "INFO", "propagate": true},
+    "uvicorn.access": {"handlers": [], "level": "INFO", "propagate": false}
+  }
+}

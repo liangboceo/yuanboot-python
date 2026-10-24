@@ -4,6 +4,7 @@ import logging
 import re
 import time
 import uuid
+from datetime import datetime
 
 from prometheus_client import CollectorRegistry, Counter, Histogram
 from starlette.datastructures import Headers, MutableHeaders
@@ -67,7 +68,7 @@ class RequestScopeMiddleware:
         try:
             await self.app(scope, receive, tracked_send)
         except Exception:
-            logger.exception("Unhandled request error request_id=%s", request_id)
+            logger.exception("Unhandled request error")
             if response_started or scope["type"] != "http":
                 raise
             response = JSONResponse(
@@ -87,11 +88,12 @@ class RequestScopeMiddleware:
                     self.metrics.requests.labels(*labels).inc()
                     self.metrics.duration.labels(*labels).observe(elapsed)
                     logger.info(
-                        "%s %s %s %.4fs request_id=%s",
+                        "[yuanboot] %s | %3d | %7d ms| %15s | %5s %s",
+                        datetime.now().strftime("%Y/%m/%d - %H:%M:%S.%f")[:-4],
+                        status_code,
+                        int(elapsed * 1000),
+                        Headers(scope=scope).get("host", ""),
                         scope["method"],
                         scope["path"],
-                        status_code,
-                        elapsed,
-                        request_id,
                     )
                 request_id_context.reset(context_token)

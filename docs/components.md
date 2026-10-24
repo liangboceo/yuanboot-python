@@ -42,7 +42,7 @@ yuanboot:
     file: ./logs/application.log
     max_bytes: 10485760
     backup_count: 5
-    levels:
+    loggers:
       sqlalchemy.engine: WARNING
   datasource:
     mysql:
@@ -224,3 +224,47 @@ XXL 配置在 `yuanboot.application.xxl`：`admin_url`、`access_token`、`regis
 兼容 serverAddr/accessToken/registryKey 名称；监听端口由当前 WebHost 管理。
 支持 `/xxl-job/beat`、idleBeat、run、kill、log，支持 BEAN 分片参数、日志与结果回调。
 正在执行同 jobId 时返回 busy；回调只在内存重试，进程退出/崩溃不保证补发；生产接入需按场景补持久化策略。
+
+## 统一日志与启动信息
+
+宿主默认启用日志，业务 `logging.getLogger(__name__)`、框架和服务器日志使用统一配置。
+启动时输出 yuanboot-python 版本、版权、MIT 许可、应用名、PID 和运行环境。
+文本日志默认 `log_type: zap`，可选 `logrus`；`json: true` 切换到结构化 JSON。
+
+```yaml
+yuanboot:
+  logging:
+    level: INFO
+    log_type: zap
+    json: false
+    console: true
+    file: ./logs/application.log
+    max_bytes: 10485760
+    backup_count: 5
+    loggers:
+      sqlalchemy.engine: WARNING
+```
+
+zap 文本格式（字段间为 Tab）：
+
+```text
+[yuanboot-nio-123-456] 2026/10/24 20:00:00.12 INFO orders/service.py:42 order created request_id=order-123
+```
+
+logrus 文本格式：
+
+```text
+2026/10/24 20:00:00.12 - [yuanboot-nio-123-456] - [INFO] order created level=INFO request_id=order-123
+```
+
+时间使用本地时区，保留百分秒；前缀包含 PID 和 Python 线程 ID。
+访问日志记录状态、毫秒耗时、Host、方法、路径和 Request ID；请求正文不自动写入日志。
+控制台与轮转文件使用相同格式，异常保留堆栈，额外字段中的密码和令牌会脱敏。
+日志配置作用于当前进程，宿主关闭时释放处理器并恢复先前的日志配置。
+
+## Swagger 版权信息
+
+默认 `/docs` 与 `/openapi.json` 包含框架版本、版权、MIT 许可及框架链接。
+业务可通过 `WebHostBuilder(title=..., version=..., description=..., contact=..., license_info=...)`
+设置业务文档元数据；业务描述后附加独立的框架版权说明。
+自定义 `docs_url`、代理路径和禁用文档的 FastAPI 选项继续生效。

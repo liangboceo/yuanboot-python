@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 
 from yuanboot import ConfigurationBuilder
@@ -25,5 +24,4 @@ def create_host():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     create_host().run()

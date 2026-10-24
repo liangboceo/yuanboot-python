@@ -16,7 +16,8 @@
 - 统一宿主、应用生命周期、后台服务和优雅退出。
 - YAML / JSON、多环境配置、环境变量和远程配置热更新。
 - MySQL、Redis、Nacos 配置中心、服务注册与发现。
-- 结构化日志、请求追踪、健康检查、Prometheus 和 JWT。
+- 统一启动版权信息、zap / logrus 文本与 JSON 日志、请求追踪、健康检查、Prometheus 和 JWT。
+- Swagger 展示框架版本、版权、联系信息与 MIT 许可，并保留业务文档配置。
 - HTTP 客户端、定时任务、SMTP、gRPC 和 XXL-Job BEAN 执行器。
 - `yuanbootctl-python` 提供六类项目模板、运行和构建命令。
 
@@ -33,7 +34,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.6
+VERSION=0.1.7
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -55,21 +56,21 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.1.6'
+python -m pip install 'yuanboot[all]==0.1.7'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.1.6
+python -m pip install yuanbootctl-python==0.1.7
 yuanbootctl-python --version
 ```
 
 `yuanbootctl-python` 自动依赖同版本的 `yuanboot`，命令入口和模板资源统一由框架提供。
 `yuanbootctl-python[all]` 会安装全部标准组件。PyPI 安装方式需要 Python 3.11+。
 
-业务项目也可使用 Git tag 固定框架版本：
+创建业务项目并安装依赖：
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.6'
+python -m pip install 'yuanbootctl-python[all]==0.1.7'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -78,8 +79,10 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成的项目默认保持 Git tag 依赖；使用 PyPI 时可将依赖改为 `yuanboot==0.1.6`、
-`yuanboot[all]==0.1.6`（gRPC 项目使用 `yuanboot[grpc]==0.1.6`）。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.1.7`，
+组件固定 `yuanboot[all]==0.1.7`，gRPC 固定 `yuanboot[grpc]==0.1.7`。
+版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.1.7` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。

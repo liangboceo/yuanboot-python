@@ -1,6 +1,6 @@
 # yuanboot-python 使用说明
 
-本文为 `__PROJECT__` 随项目附带的框架开发文档。生成工具版本 `__YUANBOOT_VERSION__`，框架依赖引用 `__FRAMEWORK_REF__`。
+本文为 `__PROJECT__` 随项目附带的框架开发文档。生成工具版本 `__YUANBOOT_VERSION__`，框架依赖 `__FRAMEWORK_REF__`。
 项目依赖以 `pyproject.toml` 为准；升级依赖后应同步检查项目中的文档。
 
 ## 框架概述
@@ -207,6 +207,7 @@ host = (
 | `/docs`、`/openapi.json` | FastAPI 原生接口文档 |
 
 独立 `use_health(router, {"database": check_db})` 支持自定义同步/异步检查和超时。
-默认请求中间件生成/透传 `X-Request-ID`、记录访问耗时、回收请求作用域，并把未处理异常转换为不含异常堆栈的 JSON 500。日志使用标准 Python logging。
+默认请求中间件生成/透传 `X-Request-ID`、记录访问耗时、回收请求作用域，并把未处理异常转换为不含异常堆栈的 JSON 500。日志使用统一的 zap / logrus 文本或 JSON 格式，并关联 Request ID。
+宿主启动与 Swagger 文档显示框架版本、版权和 MIT 许可，详细配置见核心组件文档。
 可选 `pip install -e ".[jwt]"` 后使用 `yuanboot.web.security.JwtBearer` 作为 FastAPI Security 依赖验证 JWT。
 

@@ -15,6 +15,7 @@ from typing import Any
 from starlette.concurrency import run_in_threadpool
 
 from yuanboot._version import __version__
+from yuanboot.branding import NOTICE
 from yuanboot.configuration import Configuration, ConfigurationBuilder
 from yuanboot.dependency_injection import ServiceCollection, ServiceProvider
 from yuanboot.environment import validate_profile
@@ -129,6 +130,15 @@ class Host:
         self._phase = "starting"
         self.life.state = "starting"
         try:
+            from yuanboot.logging import LoggingManager
+
+            self.services.get_service(LoggingManager)
+            logger.info(":: yuanboot-python :: (version: %s)", __version__)
+            logger.info(NOTICE)
+            logger.info("Welcome to yuanboot, starting application ...")
+            logger.info("application running pid  :  %s", self.environment.pid)
+            logger.info("application name         :  %s", self.environment.application_name)
+            logger.info("application environment  :  %s", self.environment.profile)
             await self.life.publish("starting", self)
             for service_type in self._hosted_types:
                 service = self.services.get_service(service_type)
@@ -140,9 +150,7 @@ class Host:
             self.life.state = "up"
             self._phase = "started"
             await self.life.publish("started", self)
-            logger.info(
-                "yuanboot :: %s [%s]", self.environment.application_name, self.environment.profile
-            )
+            logger.info("Server is Started.")
         except BaseException:
             try:
                 await self.stop()
@@ -316,6 +324,10 @@ class HostBuilder:
             self.services.add_hosted_service(ConfigurationMonitor)
         for configure in self._service_configures:
             configure(self.services)
+        from yuanboot.logging import LoggingManager, add_logging
+
+        if not self.services.contains(LoggingManager):
+            add_logging(self.services)
         for configure in self._life_configures:
             configure(life)
         return environment, life

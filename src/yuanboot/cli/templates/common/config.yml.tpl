@@ -4,6 +4,7 @@ yuanboot:
     server:
       address: ":8080"
   logging:
+    log_type: zap
     level: INFO
     json: false
     console: true

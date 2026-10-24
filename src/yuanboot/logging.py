@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sys
+import time
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +21,42 @@ from yuanboot.hosting import HostedService
 request_id_context: ContextVar[str] = ContextVar("yuanboot_request_id", default="")
 _PRIVATE = re.compile(r"password|secret|authorization|access.?token|credential", re.IGNORECASE)
 _STANDARD = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime", "request_id", "app"}
+
+
+def server_log_config() -> dict:
+    return json.loads(Path(__file__).with_suffix(".json").read_text(encoding="utf-8"))
+
+
+class TextFormatter(logging.Formatter):
+    """Yuanboot zap/logrus console layout, with hundredths of a second."""
+
+    def __init__(self, log_type="zap"):
+        super().__init__()
+        self.log_type = log_type
+
+    def format(self, record):
+        timestamp = time.strftime("%Y/%m/%d %H:%M:%S", self.converter(record.created))
+        timestamp += f".{int(record.msecs) // 10:02d}"
+        prefix = f"yuanboot-nio-{record.process}-{record.thread}"
+        level = {"WARNING": "WARN", "CRITICAL": "FATAL"}.get(record.levelname, record.levelname)
+        message = record.getMessage()
+        if self.log_type == "logrus":
+            text = f"{timestamp} - [{prefix}] - [{level}] {message} level={level}"
+        else:
+            caller = f"{Path(record.pathname).parent.name}/{record.filename}:{record.lineno}"
+            text = f"[{prefix}] {timestamp}\t{level}\t{caller}\t{message}"
+        extra = {key: value for key, value in record.__dict__.items() if key not in _STANDARD}
+        if request_id := getattr(record, "request_id", "") or request_id_context.get():
+            extra["request_id"] = request_id
+        if extra:
+            text += " " + " ".join(
+                f"{key}={value}" for key, value in sorted(_redact(extra).items())
+            )
+        if record.exc_info:
+            text += "\n" + self.formatException(record.exc_info)
+        if record.stack_info:
+            text += "\n" + self.formatStack(record.stack_info)
+        return text
 
 
 def _redact(value):
@@ -39,6 +78,7 @@ class LoggingOptions(BaseModel):
     max_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
     backup_count: int = Field(default=5, ge=0)
     loggers: dict[str, str] = Field(default_factory=dict)
+    log_type: Literal["zap", "logrus"] = "zap"
 
 
 class RequestContextFilter(logging.Filter):
@@ -76,24 +116,34 @@ class LoggingManager:
         name = configuration.get_string("app") or configuration.get_string(
             "yuanboot.application.name", "yuanboot"
         )
-        self.logger = logging.getLogger("yuanboot")
+        self.logger = logging.getLogger()
         self._old_level, self._old_propagate = self.logger.level, self.logger.propagate
         self._logger_levels = {}
+        self._logger_states = {}
         self._handlers: list[logging.Handler] = []
         self._closed = False
         level = self.options.level.upper()
         if level not in logging.getLevelNamesMapping():
             raise ValueError("Invalid logging level")
         formatter = (
-            JsonFormatter()
-            if self.options.json_format
-            else logging.Formatter(
-                "%(asctime)s %(levelname)s [%(app)s] %(name)s request_id=%(request_id)s %(message)s"
-            )
+            JsonFormatter() if self.options.json_format else TextFormatter(self.options.log_type)
         )
         try:
+            # Route framework, application and server logs through one handler set.
+            for logger_name in ("", "yuanboot", "uvicorn", "uvicorn.error", "uvicorn.access"):
+                target = logging.getLogger(logger_name)
+                self._logger_states[target] = (
+                    target.handlers[:],
+                    target.level,
+                    target.propagate,
+                    target.disabled,
+                )
+                target.handlers = []
+                target.setLevel(logging.NOTSET)
+                target.propagate = True
+                target.disabled = logger_name == "uvicorn.access"
             if self.options.console:
-                self._handlers.append(logging.StreamHandler())
+                self._handlers.append(logging.StreamHandler(sys.stdout))
             if self.options.file:
                 path = Path(self.options.file).expanduser()
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +187,12 @@ class LoggingManager:
         for target, level in self._logger_levels.items():
             target.setLevel(level)
         self._logger_levels.clear()
+        for target, (handlers, level, propagate, disabled) in self._logger_states.items():
+            target.handlers = handlers
+            target.setLevel(level)
+            target.propagate = propagate
+            target.disabled = disabled
+        self._logger_states.clear()
 
 
 def get_logger(name: str = "app") -> logging.Logger:
