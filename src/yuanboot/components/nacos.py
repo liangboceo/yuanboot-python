@@ -21,6 +21,7 @@ try:
 except ImportError as exc:
     raise ImportError('Nacos requires: pip install "yuanboot[nacos]"') from exc
 
+from yuanboot.branding import AUTHOR
 from yuanboot.configuration import Configuration
 from yuanboot.health import HealthRegistry
 from yuanboot.hosting import ApplicationLife, BackgroundService, HostEnvironment, invoke
@@ -452,7 +453,7 @@ class NacosRegistration(BackgroundService):
             metadata={
                 "yuanboot_version": environment.version,
                 "yuanboot_env": environment.profile,
-                "yuanboot_author": "jackson",
+                "yuanboot_author": AUTHOR,
                 "yuanboot_application_description": "quickly,quickly,quickly,quickly,quickly!!!!!",
                 "yuanboot_application_context-path": options.get_string("metadata.path")
                 or configuration.get_string("yuanboot.application.server.path"),

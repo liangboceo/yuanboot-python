@@ -9,7 +9,7 @@ description = "A dependency-injected Python microservice framework built on Fast
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-authors = [{name = "yuanboot contributors"}]
+authors = [{name = "jackson liang"}]
 keywords = ["fastapi", "microservice", "dependency-injection", "nacos", "yuanboot"]
 classifiers = [
   "Programming Language :: Python :: 3",

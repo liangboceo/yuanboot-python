@@ -1,5 +1,7 @@
 # yuanboot-python 使用说明
 
+yuanboot-python 作者：jackson liang。Copyright (c) 2026 jackson liang。
+
 本文为 `__PROJECT__` 随项目附带的框架开发文档。生成工具版本 `__YUANBOOT_VERSION__`，框架依赖 `__FRAMEWORK_REF__`。
 项目依赖以 `pyproject.toml` 为准；升级依赖后应同步检查项目中的文档。
 

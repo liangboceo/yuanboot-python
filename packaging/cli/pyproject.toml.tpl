@@ -9,7 +9,7 @@ description = "Project scaffolding, run and build tools for yuanboot-python"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-authors = [{name = "yuanboot contributors"}]
+authors = [{name = "jackson liang"}]
 keywords = ["yuanboot", "cli", "fastapi", "scaffolding"]
 classifiers = [
   "Programming Language :: Python :: 3",

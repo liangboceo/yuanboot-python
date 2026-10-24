@@ -1,5 +1,7 @@
 # __PROJECT__
 
+yuanboot-python 作者：jackson liang。Copyright (c) 2026 jackson liang。
+
 基于 **yuanboot-python** 的 __TEMPLATE__ 项目，Python 3.11+。
 
 ## 项目文档

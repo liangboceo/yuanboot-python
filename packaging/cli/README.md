@@ -1,5 +1,7 @@
 # yuanbootctl-python
 
+作者：jackson liang。Copyright (c) 2026 jackson liang。
+
 yuanboot-python 的项目工具，支持创建项目、运行应用和构建业务包。Python 3.11+。
 
 ## 安装

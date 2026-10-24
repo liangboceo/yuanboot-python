@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "__PROJECT__"
 version = "0.1.0"
 description = "An application built with yuanboot"
+authors = [{name = "jackson liang"}]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [__YUANBOOT_REQUIREMENT__]

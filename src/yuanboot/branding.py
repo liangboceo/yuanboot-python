@@ -4,7 +4,8 @@ from yuanboot._version import __version__
 
 PROJECT_URL = "https://github.com/liangboceo/yuanboot-python"
 DOCUMENTATION_URL = "https://yuanboot.star2cloud.com/python/"
-COPYRIGHT = "Copyright (c) 2019 max zhang; Copyright (c) 2026 yuanboot contributors"
+AUTHOR = "jackson liang"
+COPYRIGHT = f"Copyright (c) 2026 {AUTHOR}"
 NOTICE = f"yuanboot-python {__version__} | {COPYRIGHT} | MIT License"
 
 

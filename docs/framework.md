@@ -1,5 +1,7 @@
 # 框架开发指南
 
+yuanboot-python 作者：jackson liang。Copyright (c) 2026 jackson liang。
+
 ## 最小应用
 
 ```python

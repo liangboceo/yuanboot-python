@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from yuanboot.branding import DOCUMENTATION_URL, PROJECT_URL, swagger_description
+from yuanboot.branding import AUTHOR, DOCUMENTATION_URL, PROJECT_URL, swagger_description
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import Host, HostBuilder
 from yuanboot.logging import server_log_config
@@ -119,7 +119,7 @@ class WebHostBuilder(HostBuilder):
             "title": environment.application_name,
             "version": environment.version,
             "terms_of_service": DOCUMENTATION_URL,
-            "contact": {"name": "yuanboot", "url": PROJECT_URL},
+            "contact": {"name": AUTHOR, "url": PROJECT_URL},
             "license_info": {"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
         }
         options.update(self._fastapi_options)

@@ -1,5 +1,7 @@
 # yuanboot-python
 
+作者：jackson liang。Copyright (c) 2026 jackson liang。
+
 简单、轻量、快速的 Python 微服务框架，基于 FastAPI、Uvicorn 和依赖注入构建，支持 Web API、MVC、gRPC 与后台服务。Python 3.11+。
 
 [![Build](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml/badge.svg)](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml)

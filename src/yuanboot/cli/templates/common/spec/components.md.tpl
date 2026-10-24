@@ -141,7 +141,7 @@ configuration = (
 | --- | --- |
 | yuanboot_version | 框架版本 |
 | yuanboot_env | 部署环境 dev / fat / uat / pro |
-| yuanboot_author | jackson |
+| yuanboot_author | jackson liang |
 | yuanboot_application_description | quickly,quickly,quickly,quickly,quickly!!!!! |
 | yuanboot_application_context-path | discovery.metadata.path，回退 application.server.path |
 | yuanboot_application_pid | PID 字符串 |
@@ -228,7 +228,7 @@ XXL 配置在 `yuanboot.application.xxl`：`admin_url`、`access_token`、`regis
 ## 统一日志与启动信息
 
 宿主默认启用日志，业务 `logging.getLogger(__name__)`、框架和服务器日志使用统一配置。
-启动时输出 yuanboot-python 版本、版权、MIT 许可、应用名、PID 和运行环境。
+启动时输出 yuanboot-python 版本、`Copyright (c) 2026 jackson liang`、MIT 许可、应用名、PID 和运行环境。
 文本日志默认 `log_type: zap`，可选 `logrus`；`json: true` 切换到结构化 JSON。
 
 ```yaml
