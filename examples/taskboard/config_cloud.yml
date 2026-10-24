@@ -1,0 +1,15 @@
+yuanboot:
+  application:
+    name: yuanboot-python-taskboard
+  cloud:
+    nacos:
+      server_addr: "${NACOS_SERVER_ADDR:http://127.0.0.1:8848}"
+      username: "${NACOS_USERNAME:}"
+      password: "${NACOS_PASSWORD:}"
+      group: YUANBOOT_PYTHON_DEMO
+      data_id: yuanboot-python-taskboard.yml
+      poll_interval: 2
+    discovery:
+      type: nacos
+      ip: "${YUANBOOT_SERVICE_IP:}"
+      heartbeat_interval: 5

@@ -1,0 +1,16 @@
+services:
+  taskboard:
+    build:
+      context: ../..
+      dockerfile: examples/taskboard/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      YUANBOOT_PROFILE: prod
+      YUANBOOT_DATABASE__PATH: /app/data/taskboard.db
+    volumes:
+      - taskboard-data:/app/data
+    init: true
+    stop_grace_period: 30s
+volumes:
+  taskboard-data:

@@ -1,0 +1,26 @@
+# Publish this document to group YUANBOOT_PYTHON_DEMO, data ID yuanboot-python-taskboard.yml.
+# Credentials are resolved from the application's environment, not stored in Nacos.
+yuanboot:
+  logging:
+    level: INFO
+    json: true
+    console: true
+    file: ./data/logs/application.log
+    max_bytes: 10485760
+    backup_count: 5
+  datasource:
+    mysql:
+      host: "${MYSQL_HOST}"
+      port: "${MYSQL_PORT:3306}"
+      database: yuanboot_python_taskboard
+      username: "${MYSQL_USERNAME}"
+      password: "${MYSQL_PASSWORD}"
+      pool_size: 5
+      max_overflow: 10
+      pool_recycle: 1800
+    redis:
+      url: "${REDIS_URL}"
+      password: "${REDIS_PASSWORD}"
+      prefix: "yuanboot-python-taskboard:"
+demo:
+  message: "MySQL、Redis、Nacos 配置中心与服务注册已接入"

@@ -1,0 +1,37 @@
+name: Test and build
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '${{ matrix.python }}'
+          cache: pip
+      - run: python -m pip install -e '.[dev,all]'
+      - run: ruff check . && ruff format --check .
+      - run: python -m pytest -q
+      - run: python -m pip install --no-deps -e ./examples/taskboard
+      - run: python -m pytest -q examples/taskboard/tests
+      - run: python -m build
+      - run: python scripts/check_distribution.py
+      - if: matrix.python == '3.12'
+        run: python scripts/smoke_wheel.py
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/check_release.py '${{ github.ref_name }}'
+      - if: matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: yuanboot-distributions
+          path: dist/*
