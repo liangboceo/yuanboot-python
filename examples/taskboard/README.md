@@ -85,7 +85,7 @@ curl http://127.0.0.1:8080/api/tasks/stats
 框架默认使用 Git tag 依赖，单独安装项目时执行 `pip install -e '.[dev,cloud]'`。
 本仓库本地开发按上文先安装框架再 `--no-deps` 安装业务，避免拉取远程框架覆盖正在调试的代码。
 项目已提供 `uv.lock`，固定框架 `v0.1.1` 对应的 commit 和传递依赖；可在项目目录运行
-`uv sync --frozen --extra dev --extra cloud` 复现依赖，再用 `uv run --frozen yuanbootctl run --profile cloud` 启动。
+`uv sync --frozen --extra dev --extra cloud` 复现依赖，再用 `uv run --frozen --extra cloud yuanbootctl run --profile cloud` 启动。
 当前锁文件使用清华 PyPI 镜像；重新生成时使用 `uv lock --default-index https://pypi.tuna.tsinghua.edu.cn/simple`，
 也可选择其他镜像并重新生成、验证锁文件。
 
