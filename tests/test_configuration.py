@@ -3,8 +3,32 @@ import json
 import pytest
 from pydantic import BaseModel
 
-from yuanboot import Configuration, ConfigurationBuilder
+from yuanboot import Configuration, ConfigurationBuilder, HostEnvironment
 from yuanboot.web.application import server_address
+
+
+@pytest.mark.parametrize("profile", ["dev", "fat", "uat", "pro"])
+def test_deployment_profiles_are_preserved_across_configuration_and_host(tmp_path, profile):
+    (tmp_path / f"config_{profile}.yml").write_text(f"selected: {profile}\n")
+    config = ConfigurationBuilder(tmp_path).add_yaml_file().build(profile=profile)
+    assert config.profile == profile
+    assert config.get_string("selected") == profile
+    environment = HostEnvironment(profile=profile)
+    assert environment.is_development == (profile == "dev")
+    assert environment.is_fat == (profile == "fat")
+    assert environment.is_uat == (profile == "uat")
+    assert environment.is_production == (profile == "pro")
+
+
+@pytest.mark.parametrize("invalid", ["cloud", "prod", "test", "../outside"])
+def test_invalid_deployment_profiles_fail_before_registration(monkeypatch, invalid):
+    with pytest.raises(ValueError, match="Profile"):
+        Configuration(profile=invalid)
+    with pytest.raises(ValueError, match="Profile"):
+        HostEnvironment(profile=invalid)
+    monkeypatch.setenv("YUANBOOT_PROFILE", invalid)
+    with pytest.raises(ValueError, match="Profile"):
+        ConfigurationBuilder().add_environment().build()
 
 
 def test_layered_configuration(tmp_path, monkeypatch):
@@ -12,8 +36,8 @@ def test_layered_configuration(tmp_path, monkeypatch):
         'database:\n  host: localhost\n  port: 5432\n  password: "${DB_SECRET:default}"\n'
         'url: "https://${DOMAIN:example.com}/path"\n'
     )
-    (tmp_path / "config_prod.yml").write_text("database:\n  port: 5433\n")
-    monkeypatch.setenv("YUANBOOT_PROFILE", "prod")
+    (tmp_path / "config_pro.yml").write_text("database:\n  port: 5433\n")
+    monkeypatch.setenv("YUANBOOT_PROFILE", "pro")
     monkeypatch.setenv("YUANBOOT_DATABASE__HOST", "remote")
     monkeypatch.setenv("YUANBOOT_PORT", "7000")
     monkeypatch.setenv("DB_SECRET", "s3cret")
@@ -25,7 +49,7 @@ def test_layered_configuration(tmp_path, monkeypatch):
         .add_flag_args(["--port", "9000", "--unrelated", "value"])
         .build()
     )
-    assert config.profile == "prod"
+    assert config.profile == "pro"
     assert config.get_bool("enabled") is True
     assert config.get_int("database.port") == 5433
     assert config.get_string("DATABASE.HOST") == "remote"

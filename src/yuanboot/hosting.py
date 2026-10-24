@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 from yuanboot._version import __version__
 from yuanboot.configuration import Configuration, ConfigurationBuilder
 from yuanboot.dependency_injection import ServiceCollection, ServiceProvider
+from yuanboot.environment import validate_profile
 from yuanboot.health import HealthRegistry
 
 logger = logging.getLogger("yuanboot")
@@ -36,9 +37,24 @@ class HostEnvironment:
     pid: int = field(default_factory=os.getpid)
     version: str = __version__
 
+    def __post_init__(self):
+        validate_profile(self.profile)
+
     @property
     def is_development(self) -> bool:
         return self.profile == "dev"
+
+    @property
+    def is_fat(self) -> bool:
+        return self.profile == "fat"
+
+    @property
+    def is_uat(self) -> bool:
+        return self.profile == "uat"
+
+    @property
+    def is_production(self) -> bool:
+        return self.profile == "pro"
 
 
 @dataclass(frozen=True)

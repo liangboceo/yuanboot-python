@@ -1,4 +1,4 @@
-"""MySQL repository and Redis cache used by the cloud profile."""
+"""MySQL repository and Redis cache for remote infrastructure in any deployment environment."""
 
 from datetime import UTC, datetime
 from uuid import UUID, uuid4

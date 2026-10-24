@@ -19,7 +19,8 @@ from yuanboot.health import HealthRegistry
 from yuanboot.hosting import ApplicationLife
 
 
-def test_registration_matches_go_metadata_and_weight():
+@pytest.mark.parametrize("profile", ["dev", "fat", "uat", "pro"])
+def test_registration_matches_go_metadata_and_weight(profile):
     configuration = Configuration(
         {
             "yuanboot": {
@@ -33,7 +34,7 @@ def test_registration_matches_go_metadata_and_weight():
         registration = NacosRegistration(
             client,
             configuration,
-            HostEnvironment("sample", "prod", pid=123),
+            HostEnvironment("sample", profile, pid=123),
             ApplicationLife(),
             HealthRegistry(),
         )
@@ -43,7 +44,7 @@ def test_registration_matches_go_metadata_and_weight():
         assert instance.healthy and instance.enabled and instance.ephemeral
         assert instance.metadata == {
             "yuanboot_version": __version__,
-            "yuanboot_env": "prod",
+            "yuanboot_env": profile,
             "yuanboot_author": "jackson",
             "yuanboot_application_description": "quickly,quickly,quickly,quickly,quickly!!!!!",
             "yuanboot_application_context-path": "/api",

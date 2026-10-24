@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from yuanboot import Configuration, ConfigurationBuilder
@@ -13,6 +14,8 @@ def create_app(configuration: Configuration | None = None):
         if not (directory / "config.yml").is_file() and (source_project / "config.yml").is_file():
             directory = source_project
         builder = ConfigurationBuilder(directory).add_yaml_file("config").add_environment()
+        if os.environ.get("TASKBOARD_INFRASTRUCTURE") == "remote":
+            builder.add_yaml_file("infrastructure")
         bootstrap = builder.build()
         configuration = (
             builder.add_nacos().build()

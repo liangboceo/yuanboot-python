@@ -155,7 +155,7 @@ configuration = (
 | 字段 | 默认值来源 |
 | --- | --- |
 | yuanboot_version | 框架版本 |
-| yuanboot_env | profile |
+| yuanboot_env | 部署环境 dev / fat / uat / pro |
 | yuanboot_author | jackson |
 | yuanboot_application_description | quickly,quickly,quickly,quickly,quickly!!!!! |
 | yuanboot_application_context-path | discovery.metadata.path，回退 application.server.path |

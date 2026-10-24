@@ -12,6 +12,7 @@ from pathlib import Path
 from yuanboot import __version__
 from yuanboot.cli.scaffolding import FRAMEWORK_REPOSITORY, TEMPLATES, create_project
 from yuanboot.configuration import ConfigurationBuilder
+from yuanboot.environment import PROFILES
 from yuanboot.web.application import server_address
 
 
@@ -58,7 +59,7 @@ def _parser():
     new.add_argument("--framework-ref", default="v" + __version__)
     run = commands.add_parser("run", help="Run the current project's web or console host")
     run.add_argument("-p", "--path", default=".")
-    run.add_argument("--profile")
+    run.add_argument("--profile", choices=PROFILES)
     run.add_argument("--host")
     run.add_argument("--port", type=int)
     run.add_argument("--reload", action="store_true")

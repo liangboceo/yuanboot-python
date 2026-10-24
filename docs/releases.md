@@ -7,8 +7,8 @@
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1'
-yuanbootctl new mvc -n orders --framework-ref v0.1.1
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.2'
+yuanbootctl new mvc -n orders --framework-ref v0.1.2
 cd orders
 python -m pip install -e '.[dev,components]'
 yuanbootctl run
@@ -21,12 +21,12 @@ yuanbootctl run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1",
+  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.2",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1",
+  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.2",
 ]
 ```
 
@@ -40,7 +40,7 @@ components = [
 框架只有一个版本源：`src/yuanboot/_version.py`。Hatch 构建元数据、ctl 和 Nacos metadata 从这里取版本。
 业务项目自己管理版本，与框架版本互不绑定。
 
-- 补丁版本 `v0.1.1`：修复兼容问题。
+- 补丁版本 `v0.1.2`：修复兼容问题。
 - 次版本 `v0.2.0`：新增能力或 0.x 阶段的不兼容变化。
 - `v1.0.0` 后按语义化版本管理兼容性。
 
@@ -71,12 +71,12 @@ ruff check .
 ruff format --check .
 python -m build
 python scripts/check_distribution.py
-python scripts/check_release.py v0.1.1
+python scripts/check_release.py v0.1.2
 git add .
-git commit -m "Release yuanboot Python 0.1.1"
-git tag -a v0.1.1 -m "yuanboot Python 0.1.1"
+git commit -m "Release yuanboot Python 0.1.2"
+git tag -a v0.1.2 -m "yuanboot Python 0.1.2"
 git push origin master
-git push origin v0.1.1
+git push origin v0.1.2
 ```
 
 首次发布后在仓库设置中将默认分支设为 `master`。
@@ -86,7 +86,7 @@ CI 校验 tag 与版本源一致，不上传 PyPI。框架 wheel 包含模板资
 ## 锁定完整依赖
 
 Git tag 只锁定框架，不能自动锁定 FastAPI、SQLAlchemy 等传递依赖。
-`examples/taskboard/uv.lock` 已提供真实示例：固定 `v0.1.1` 的 commit、包版本和下载哈希，
+`examples/taskboard/uv.lock` 已提供真实示例：固定 `v0.1.2` 的 commit、包版本和下载哈希，
 并已通过全新环境的 frozen 安装验证；该锁文件使用清华镜像。
 每个业务项目应提交自己的 lock 文件。例如使用 uv：
 

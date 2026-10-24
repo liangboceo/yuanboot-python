@@ -35,8 +35,8 @@ curl -X POST http://127.0.0.1:8080/api/greet \
 业务项目默认以 Git tag 固定框架版本，无需发布 PyPI：
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1'
-yuanbootctl new mvc -n orders --framework-ref v0.1.1
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.2'
+yuanbootctl new mvc -n orders --framework-ref v0.1.2
 ```
 
 框架版本只维护在 `src/yuanboot/_version.py`；业务版本独立维护。
@@ -57,8 +57,8 @@ yuanbootctl new mvc -n orders --framework-ref v0.1.1
 yuanbootctl new mvc -n my-app -p /tmp
 yuanbootctl new console -n worker -p /tmp
 yuanbootctl new grpc -n rpc-demo -p /tmp
-yuanbootctl new webapi -n orders --framework-ref v0.1.1
-yuanbootctl run --profile prod --port 9000
+yuanbootctl new webapi -n orders --framework-ref v0.1.2
+yuanbootctl run --profile pro --port 9000
 yuanbootctl run --workers 2
 yuanbootctl build                 # python -m build，输出 wheel/sdist
 yuanbootctl version
@@ -107,7 +107,9 @@ config = (
 ```
 
 优先级：默认值 < `config.yml` < `config_<profile>.yml` < 远程配置（Nacos/Apollo/自定义源）< 环境变量 < CLI。
-profile 默认 `dev`，通过 `build(profile="prod")`、`YUANBOOT_PROFILE` 或 `--profile` 选择；profile 文件与基础文件递归合并。
+profile 默认 `dev`，通过 `build(profile="pro")`、`YUANBOOT_PROFILE` 或 `--profile` 选择；profile 文件与基础文件递归合并。
+环境名统一为 `dev / fat / uat / pro`，其他值会在启动前报错。模板包含这四个环境的配置文件。
+MySQL、Redis、Nacos 等基础设施由配置决定，不能使用 `cloud` 作为环境名。
 支持 JSON、可选文件、`${ENV:default}` 插值、点路径查询和 Pydantic 模型绑定。
 
 ```yaml

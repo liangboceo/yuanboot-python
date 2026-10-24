@@ -1,7 +1,9 @@
 # Taskboard 任务管理服务
 
 使用 **yuanbootctl 生成的 MVC 模板**开发的业务项目：FastAPI + yuanboot DI/MVC。
-本地 profile 使用 SQLite；cloud profile 使用 MySQL、Redis、Nacos 配置/注册和 JSON 日志。
+环境名统一为 `dev / fat / uat / pro`，默认 `dev`；默认存储为 SQLite。
+通过 `TASKBOARD_INFRASTRUCTURE=remote` 独立启用 MySQL、Redis、Nacos 配置/注册和 JSON 日志，连接配置位于 `infrastructure.yml`。
+环境名与连接方式相互独立，Nacos 的 `yuanboot_env` 始终使用实际环境名。
 支持任务增删改查、状态流转、关键字搜索、分页、状态统计和重启后数据持久化。
 交互入口为 Swagger API 文档，可直接在浏览器中创建和管理任务。
 
@@ -84,8 +86,10 @@ curl http://127.0.0.1:8080/api/tasks/stats
 
 框架默认使用 Git tag 依赖，单独安装项目时执行 `pip install -e '.[dev,cloud]'`。
 本仓库本地开发按上文先安装框架再 `--no-deps` 安装业务，避免拉取远程框架覆盖正在调试的代码。
-项目已提供 `uv.lock`，固定框架 `v0.1.1` 对应的 commit 和传递依赖；可在项目目录运行
-`uv sync --frozen --extra dev --extra cloud` 复现依赖，再用 `uv run --frozen --extra cloud yuanbootctl run --profile cloud` 启动。
+项目已提供 `uv.lock`，固定框架 `v0.1.2` 对应的 commit 和传递依赖；可在项目目录运行
+`uv sync --frozen --extra dev --extra cloud` 复现依赖，再用
+`TASKBOARD_INFRASTRUCTURE=remote uv run --frozen --extra cloud yuanbootctl run --profile fat` 启动。
+这里 `cloud` 仅是安装组件的 extras 名称，环境由 `--profile` 指定。
 当前锁文件使用清华 PyPI 镜像；重新生成时使用 `uv lock --default-index https://pypi.tuna.tsinghua.edu.cn/simple`，
 也可选择其他镜像并重新生成、验证锁文件。
 
@@ -98,6 +102,8 @@ set -a
 set +a
 python scripts/setup_cloud_demo.py
 ./scripts/run_taskboard_cloud.sh
+# 联调脚本默认使用 fat，可覆盖为 dev / uat / pro：
+./scripts/run_taskboard_cloud.sh --profile uat
 ```
 
 setup 脚本只创建专用数据库 `yuanboot_python_taskboard`，不改动其他库；Nacos 配置已存在时保留原文档。

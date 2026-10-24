@@ -6,5 +6,6 @@ if [ -f "$project_root/.env.integration" ]; then
     . "$project_root/.env.integration"
     set +a
 fi
+export TASKBOARD_INFRASTRUCTURE=remote
 exec "$project_root/.venv/bin/yuanbootctl" run -p "$project_root/examples/taskboard" \
-    --profile cloud --host 0.0.0.0 --port 8080 "$@"
+    --profile "${YUANBOOT_PROFILE:-fat}" --host 0.0.0.0 --port 8080 "$@"

@@ -9,6 +9,6 @@ RUN pip install --no-cache-dir /framework \
     && mkdir -p /app/data \
     && chown -R appuser:appuser /app/data
 USER appuser
-ENV YUANBOOT_PROFILE=prod
+ENV YUANBOOT_PROFILE=pro
 EXPOSE 8080
 CMD ["yuanbootctl", "run"]

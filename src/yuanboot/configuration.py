@@ -15,6 +15,8 @@ from typing import Any, Generic, TypeVar
 import yaml
 from pydantic import BaseModel
 
+from yuanboot.environment import validate_profile
+
 T = TypeVar("T", bound=BaseModel)
 _PLACEHOLDER = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::([^}]*))?\}")
 
@@ -47,7 +49,7 @@ class Configuration:
     def __init__(self, values: Mapping | None = None, *, profile: str = "dev") -> None:
         self._values: dict = {}
         _merge(self._values, values or {})
-        self.profile = profile
+        self.profile = validate_profile(profile)
         self._reload_lock = threading.RLock()
         self._reload_factory = None
         self._sources: list = []
@@ -207,8 +209,7 @@ class ConfigurationBuilder:
             or profile
             or "dev"
         )
-        if not re.fullmatch(r"[A-Za-z0-9_-]+", profile):
-            raise ValueError("Profile must contain only letters, digits, '_' and '-'")
+        validate_profile(profile)
         directory = Path(flags.get("conf") or self.directory)
         values = copy.deepcopy(self._defaults)
         files = [(Path(flags["config"]), False)] if flags.get("config") else self._files

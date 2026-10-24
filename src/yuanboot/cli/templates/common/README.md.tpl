@@ -22,7 +22,7 @@ yuanbootctl run
 ```bash
 python -m pytest
 yuanbootctl build
-yuanbootctl run --profile prod
+yuanbootctl run --profile pro
 ```
 
 Web 模板：`http://127.0.0.1:8080/docs` 查看 API 文档，
@@ -31,6 +31,7 @@ Console 模板：运行后台任务，Ctrl+C 或 SIGTERM 优雅停止。
 gRPC 模板：监听 `yuanboot.grpc.address`，默认 127.0.0.1:9090，运行测试可验证 protobuf RPC。
 
 配置按 config.yml → config_<profile>.yml → YUANBOOT_ 环境变量覆盖。
+环境固定为 dev / fat / uat / pro；模板包含对应的四份配置，默认 dev。
 例如 `YUANBOOT_PORT=9000`、`YUANBOOT_GREETING__MESSAGE=hello`。
 `yuanbootctl run --port 9000 --reload` 适用于 Web 开发；
 `yuanbootctl run --workers 2` 适用于 Web 多进程部署。

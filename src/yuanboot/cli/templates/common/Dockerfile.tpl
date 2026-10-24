@@ -5,6 +5,6 @@ WORKDIR /app
 COPY . .
 RUN pip install --no-cache-dir . && useradd --create-home appuser
 USER appuser
-ENV YUANBOOT_PROFILE=prod
+ENV YUANBOOT_PROFILE=pro
 EXPOSE 8080
 CMD ["yuanbootctl", "run"]

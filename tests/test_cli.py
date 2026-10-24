@@ -64,6 +64,10 @@ def test_generated_project_runs_its_tests_and_routes(template, tmp_path):
     assert metadata["tool"]["hatch"]["metadata"]["allow-direct-references"] is True
     assert (project / ".gitignore").exists()
     assert (project / "Dockerfile").exists()
+    for profile in ("dev", "fat", "uat", "pro"):
+        assert (project / f"config_{profile}.yml").exists()
+    assert not (project / "config_prod.yml").exists()
+    assert not (project / "config_cloud.yml").exists()
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-q"],
         cwd=project,
@@ -96,20 +100,20 @@ def test_run_dispatch_and_options(tmp_path, monkeypatch):
     from yuanboot import cli
 
     project = create_project("webapi", "demo", tmp_path)
-    (project / "config_prod.yml").write_text(
+    (project / "config_pro.yml").write_text(
         'yuanboot:\n  application:\n    server:\n      address: ":9100"\n'
     )
     calls = []
     monkeypatch.setattr(
         cli, "_run_process", lambda command, **kwargs: calls.append((command, kwargs)) or 0
     )
-    assert main(["run", "-p", str(project), "--port", "9001", "--profile", "prod"]) == 0
+    assert main(["run", "-p", str(project), "--port", "9001", "--profile", "pro"]) == 0
     command, kwargs = calls[0]
     assert command[:3] == [sys.executable, "-m", "uvicorn"]
     assert command[command.index("--port") + 1] == "9001"
-    assert kwargs["env"]["YUANBOOT_PROFILE"] == "prod"
+    assert kwargs["env"]["YUANBOOT_PROFILE"] == "pro"
     monkeypatch.setenv("YUANBOOT_PROFILE", "dev")
-    assert main(["run", "-p", str(project), "--profile", "prod"]) == 0
+    assert main(["run", "-p", str(project), "--profile", "pro"]) == 0
     assert calls[-1][0][calls[-1][0].index("--port") + 1] == "9100"
     assert os.getcwd() != str(project)
     assert main(["run", "-p", str(project), "--reload", "--workers", "2"]) == 1

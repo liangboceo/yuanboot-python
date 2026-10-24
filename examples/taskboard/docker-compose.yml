@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      YUANBOOT_PROFILE: prod
+      YUANBOOT_PROFILE: pro
       YUANBOOT_DATABASE__PATH: /app/data/taskboard.db
     volumes:
       - taskboard-data:/app/data
