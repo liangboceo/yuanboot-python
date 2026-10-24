@@ -4,6 +4,8 @@
 
 [![Build](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml/badge.svg)](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/tag/liangboceo/yuanboot-python?label=release&sort=semver)](https://github.com/liangboceo/yuanboot-python/releases)
+[![PyPI](https://img.shields.io/pypi/v/yuanboot?label=yuanboot)](https://pypi.org/project/yuanboot/)
+[![CLI](https://img.shields.io/pypi/v/yuanbootctl-python?label=yuanbootctl-python)](https://pypi.org/project/yuanbootctl-python/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/github/license/liangboceo/yuanboot-python)](LICENSE)
 
@@ -31,7 +33,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.5
+VERSION=0.1.6
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -53,9 +55,9 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.1.5'
+python -m pip install 'yuanboot[all]==0.1.6'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.1.5
+python -m pip install yuanbootctl-python==0.1.6
 yuanbootctl-python --version
 ```
 
@@ -67,7 +69,7 @@ yuanbootctl-python --version
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.5'
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.6'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -76,8 +78,12 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成的项目默认保持 Git tag 依赖；使用 PyPI 时可将依赖改为 `yuanboot==0.1.5`、
-`yuanboot[all]==0.1.5`（gRPC 项目使用 `yuanboot[grpc]==0.1.5`）。
+生成的项目默认保持 Git tag 依赖；使用 PyPI 时可将依赖改为 `yuanboot==0.1.6`、
+`yuanboot[all]==0.1.6`（gRPC 项目使用 `yuanboot[grpc]==0.1.6`）。
+
+框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
+公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
+草稿 Release 在公开发布时触发同步；上传失败可手动重跑 **Publish PyPI**。详见[发布说明](docs/releases.md)。
 
 ## 项目模板
 

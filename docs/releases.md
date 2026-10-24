@@ -7,8 +7,8 @@
 ## PyPI 安装
 
 ```bash
-python -m pip install 'yuanboot[all]==0.1.5'
-python -m pip install yuanbootctl-python==0.1.5
+python -m pip install 'yuanboot[all]==0.1.6'
+python -m pip install yuanbootctl-python==0.1.6
 yuanbootctl-python --version
 ```
 
@@ -18,13 +18,13 @@ yuanbootctl-python --version
 - `yuanbootctl-python`：工具安装包，依赖精确版本的 `yuanboot`；`[all]` 可启用全部标准组件。
 
 生成项目默认使用 Git tag。选择 PyPI 依赖时，将业务 `pyproject.toml` 中的框架依赖改为
-`yuanboot==0.1.5`，组件依赖改为 `yuanboot[all]==0.1.5`；gRPC 基础依赖使用 `yuanboot[grpc]==0.1.5`。
+`yuanboot==0.1.6`，组件依赖改为 `yuanboot[all]==0.1.6`；gRPC 基础依赖使用 `yuanboot[grpc]==0.1.6`。
 
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.5'
-yuanbootctl-python new mvc -n orders --framework-ref v0.1.5
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.6'
+yuanbootctl-python new mvc -n orders --framework-ref v0.1.6
 cd orders
 python -m pip install -e '.[dev,components]'
 yuanbootctl-python run
@@ -37,12 +37,12 @@ yuanbootctl-python run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.5",
+  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.6",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.5",
+  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.6",
 ]
 ```
 
@@ -56,7 +56,7 @@ components = [
 框架只有一个版本源：`src/yuanboot/_version.py`。Hatch 构建元数据、ctl 和 Nacos metadata 从这里取版本。
 业务项目自己管理版本，与框架版本互不绑定。
 
-- 补丁版本 `v0.1.5`：修复兼容问题。
+- 补丁版本 `v0.1.6`：修复兼容问题。
 - 次版本 `v0.2.0`：新增能力或 0.x 阶段的不兼容变化。
 - `v1.0.0` 后按语义化版本管理兼容性。
 
@@ -69,20 +69,22 @@ components = [
 
 1. 将待发布代码推送到 `master`。
 2. 打开仓库 **Actions → Build Release → Run workflow**，选择 `master`。
-3. 填写 `version`（例如 `0.1.5`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
+3. 填写 `version`（例如 `0.1.6`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
 4. 工作流同步版本源，在 Python 3.11–3.14 上构建包，并为各平台编译独立命令行工具。
 5. 全部通过后，提交版本变更到 `master`，创建 `v<version>` tag，生成 GitHub Release，上传可执行文件、两个 PyPI 包各自的 wheel / sdist 和 SHA256SUMS。
+6. `draft=false` 的公开发布会自动启动 **Publish PyPI**，将同版本的框架包和工具包上传到正式 PyPI。
 
 也可使用 GitHub CLI 手动触发：
 
 ```bash
 gh workflow run Release.yml --ref master \
-  -f version=0.1.5 -f prerelease=false -f draft=false
+  -f version=0.1.6 -f prerelease=false -f draft=false
 ```
 
 已存在的 tag 会被拒绝，不会覆盖。构建期间如果 `master` 有更新，发布中止，需从最新 `master` 重新运行。
 `draft=true` 只控制 GitHub Release 是否为草稿，Git tag 仍会创建并可供业务依赖。
 GitHub Release 工作流使用仓库自带的 `GITHUB_TOKEN`，PyPI 上传由独立的 **Publish PyPI** 工作流执行。
+公开发布草稿 Release 时也会自动触发 PyPI 上传。
 由该 token 推送的 tag 不会再次触发 CI，发布工作流本身完成构建。
 
 本地开发时可先执行检查：
@@ -116,14 +118,19 @@ python -m twine check dist/*
 也可使用有权发布两个项目的 PyPI API Token，在仓库 Actions Secrets 中设置 `PYPI_API_TOKEN`。
 Token 只保存在 Secret 中，不写入代码、配置或命令参数。
 
-先通过 **Build Release** 发布公开的 GitHub Release，再运行 **Publish PyPI** 并填写相同版本：
+正常发布只需运行 **Build Release**，公开 Release 创建后会自动分发两个 PyPI 包。
+也可以在 GitHub 手动公开一个包含完整安装包和校验文件的 Release，触发同样的同步。
+仅推送裸 Git tag 不包含安装包，不会直接上传 PyPI。
+
+如果需要重试已发布的版本，手动运行 **Publish PyPI** 并填写相同版本：
 
 ```bash
-gh workflow run PublishPyPI.yml --ref master -f version=0.1.5
+gh workflow run PublishPyPI.yml --ref master -f version=0.1.6
 ```
 
 该工作流下载指定 Release 的四个 Python 包，核对 `SHA256SUMS`、检查包元数据后，
 分别在 `pypi`、`pypi-cli` 环境中上传到正式 PyPI。可为这些 GitHub Environment 配置审批规则。
+Release 工作流显式分发 PyPI 任务，因此通过 `GITHUB_TOKEN` 创建的 tag / Release 也能继续上传。
 已存在的文件会跳过，以便首次部分上传失败后重试；修复发布内容必须使用新版本。
 两个包全部上传成功后，再通过 PyPI 安装验证。
 

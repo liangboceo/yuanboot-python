@@ -79,6 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,3 +141,11 @@ jobs:
             --title "$tag" --generate-notes \
             --draft="$RELEASE_DRAFT" --prerelease="$RELEASE_PRERELEASE"
           echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" >> "$GITHUB_STEP_SUMMARY"
+      - name: Start PyPI publishing for the public release
+        if: ${{ !inputs.draft }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run PublishPyPI.yml --repo "$GITHUB_REPOSITORY" \
+            --ref master -f version="$RELEASE_VERSION"
+          echo 'PyPI publishing started in the Publish PyPI workflow.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,8 @@
 name: Publish PyPI
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -27,6 +29,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           python - <<'PY'
           import hashlib
@@ -37,6 +40,11 @@ jobs:
           from pathlib import Path
 
           version = os.environ['RELEASE_VERSION']
+          if os.environ.get('RELEASE_TAG'):
+              release_tag = os.environ['RELEASE_TAG']
+              if not release_tag.startswith('v'):
+                  raise SystemExit('Release tag must start with v')
+              version = release_tag[1:]
           if not re.fullmatch(r'\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?', version):
               raise SystemExit('Version must be a release version without v')
           tag = 'v' + version
