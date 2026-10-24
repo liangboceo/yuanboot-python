@@ -107,7 +107,10 @@ python -m twine check dist/*
 | GitHub repository owner | `liangboceo` | `liangboceo` |
 | GitHub repository name | `yuanboot-python` | `yuanboot-python` |
 | Workflow filename | `PublishPyPI.yml` | `PublishPyPI.yml` |
-| Environment name | `pypi` | `pypi` |
+| Environment name | `pypi` | `pypi-cli` |
+
+首次创建两个项目时必须使用不同的发布者身份，PyPI 不允许相同的 Pending Publisher
+同时对应不同的新项目。工作流通过独立的 GitHub Environment 区分两个发行包。
 
 如果项目已经存在，在该项目的 Publishing 设置中添加同样的 Trusted Publisher。
 也可使用有权发布两个项目的 PyPI API Token，在仓库 Actions Secrets 中设置 `PYPI_API_TOKEN`。
@@ -120,7 +123,7 @@ gh workflow run PublishPyPI.yml --ref master -f version=0.1.5
 ```
 
 该工作流下载指定 Release 的四个 Python 包，核对 `SHA256SUMS`、检查包元数据后，
-在 `pypi` 环境中上传到正式 PyPI。可为该 GitHub Environment 配置审批规则。
+分别在 `pypi`、`pypi-cli` 环境中上传到正式 PyPI。可为这些 GitHub Environment 配置审批规则。
 已存在的文件会跳过，以便首次部分上传失败后重试；修复发布内容必须使用新版本。
 两个包全部上传成功后，再通过 PyPI 安装验证。
 

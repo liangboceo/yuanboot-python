@@ -73,16 +73,30 @@ jobs:
       - run: python -m twine check dist/*
       - uses: actions/upload-artifact@v4
         with:
-          name: pypi-distributions
-          path: dist/*
+          name: pypi-yuanboot
+          path: dist/yuanboot-*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi-yuanbootctl-python
+          path: dist/yuanbootctl_python-*
           if-no-files-found: error
 
   publish:
+    name: Publish (${{ matrix.project }})
     needs: prepare
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: yuanboot
+            environment: pypi
+          - project: yuanbootctl-python
+            environment: pypi-cli
     environment:
-      name: pypi
-      url: https://pypi.org/project/yuanboot/
+      name: ${{ matrix.environment }}
+      url: https://pypi.org/project/${{ matrix.project }}/
     permissions:
       id-token: write
     env:
@@ -90,7 +104,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: pypi-distributions
+          name: pypi-${{ matrix.project }}
           path: dist
       - name: Publish with Trusted Publisher
         if: env.USE_API_TOKEN != 'true'
