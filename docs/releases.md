@@ -86,6 +86,8 @@ CI 校验 tag 与版本源一致，不上传 PyPI。框架 wheel 包含模板资
 ## 锁定完整依赖
 
 Git tag 只锁定框架，不能自动锁定 FastAPI、SQLAlchemy 等传递依赖。
+`examples/taskboard/uv.lock` 已提供真实示例：固定 `v0.1.1` 的 commit、包版本和下载哈希，
+并已通过全新环境的 frozen 安装验证；该锁文件使用清华镜像。
 每个业务项目应提交自己的 lock 文件。例如使用 uv：
 
 ```bash
