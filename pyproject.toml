@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -10,6 +10,16 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [{name = "yuanboot contributors"}]
+keywords = ["fastapi", "microservice", "dependency-injection", "nacos", "yuanboot"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Framework :: FastAPI",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 dependencies = [
   "fastapi>=0.115,<1",
   "pydantic>=2.9,<3",
@@ -21,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 binary = ["pyinstaller>=6.16,<7"]
-dev = ["ruff>=0.9", "build>=1.2"]
+dev = ["ruff>=0.9", "build>=1.2", "twine>=6,<7"]
 jwt = ["PyJWT>=2.9,<3"]
 mysql = ["SQLAlchemy>=2.0,<3", "PyMySQL[rsa]>=1.1,<2"]
 redis = ["redis>=5,<8"]
@@ -37,13 +47,22 @@ all = ["SQLAlchemy>=2.0,<3", "PyMySQL[rsa]>=1.1,<2", "redis>=5,<8", "httpx>=0.27
 [project.scripts]
 yuanbootctl-python = "yuanboot.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/liangboceo/yuanboot-python"
+Documentation = "https://github.com/liangboceo/yuanboot-python/tree/master/docs"
+Repository = "https://github.com/liangboceo/yuanboot-python"
+Issues = "https://github.com/liangboceo/yuanboot-python/issues"
+Releases = "https://github.com/liangboceo/yuanboot-python/releases"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/yuanboot"]
+core-metadata-version = "2.4"
 
 [tool.hatch.version]
 path = "src/yuanboot/_version.py"
 
 [tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 include = ["/src", "/docs", "/packaging", "/README.md", "/LICENSE", "/pyproject.toml"]
 exclude = ["**/__pycache__", "**/*.pyc", "**/.env*", "**/data", "**/*.log"]
 

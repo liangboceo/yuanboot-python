@@ -24,6 +24,8 @@ yuanbootctl-python run
 
 框架通过 `pyproject.toml` 中的 Git tag 依赖安装，无需 PyPI。
 项目的版本和框架版本各自维护。升级框架时修改 Git tag 并更新依赖 lock。
+也可将框架依赖改为公开 PyPI 的 `yuanboot==<version>`，组件依赖使用 `yuanboot[all]==<version>`；
+gRPC 项目的基础依赖使用 `yuanboot[grpc]==<version>`，版本应与需要的框架版本一致。
 私有仓库需要配置 Git SSH/HTTPS 访问权限；默认 Dockerfile 适用于公开 HTTPS 仓库。
 本地联调先安装完整框架 `pip install -e '/path/to/yuanboot_python[all]'`，
 再用 `pip install --no-deps -e .` 安装业务代码。

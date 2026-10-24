@@ -1,0 +1,105 @@
+name: Publish PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing public GitHub Release version without v
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-pypi
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and verify release packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          version = os.environ['RELEASE_VERSION']
+          if not re.fullmatch(r'\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?', version):
+              raise SystemExit('Version must be a release version without v')
+          tag = 'v' + version
+          release = json.loads(subprocess.check_output([
+              'gh', 'release', 'view', tag, '--json', 'isDraft,tagName'
+          ]))
+          if release['isDraft'] or release['tagName'] != tag:
+              raise SystemExit('Publish a public GitHub Release first')
+          names = [
+              f'yuanboot-{version}-py3-none-any.whl',
+              f'yuanboot-{version}.tar.gz',
+              f'yuanbootctl_python-{version}-py3-none-any.whl',
+              f'yuanbootctl_python-{version}.tar.gz',
+          ]
+          command = ['gh', 'release', 'download', tag, '--dir', 'download']
+          for name in [*names, 'SHA256SUMS']:
+              command.extend(['--pattern', name])
+          subprocess.run(command, check=True)
+          checksums = dict(
+              (name, digest) for digest, name in (
+                  line.split() for line in Path('download/SHA256SUMS').read_text().splitlines()
+              )
+          )
+          Path('dist').mkdir()
+          for name in names:
+              path = Path('download') / name
+              with path.open('rb') as stream:
+                  digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+              if digest != checksums.get(name):
+                  raise SystemExit(f'Checksum mismatch: {name}')
+              path.rename(Path('dist') / name)
+          PY
+      - run: python -m pip install 'twine>=6,<7'
+      - run: python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/yuanboot/
+    permissions:
+      id-token: write
+    env:
+      USE_API_TOKEN: ${{ secrets.PYPI_API_TOKEN != '' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pypi-distributions
+          path: dist
+      - name: Publish with Trusted Publisher
+        if: env.USE_API_TOKEN != 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+      - name: Publish with API token
+        if: env.USE_API_TOKEN == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true

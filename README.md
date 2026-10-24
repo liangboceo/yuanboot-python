@@ -31,7 +31,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.4
+VERSION=0.1.5
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -50,12 +50,24 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 
 ## 安装框架
 
-业务项目使用 Git tag 固定框架版本：
+从公开 PyPI 安装框架或项目工具：
+
+```bash
+python -m pip install 'yuanboot[all]==0.1.5'
+# 也可通过工具包安装同版本框架和命令：
+python -m pip install yuanbootctl-python==0.1.5
+yuanbootctl-python --version
+```
+
+`yuanbootctl-python` 自动依赖同版本的 `yuanboot`，命令入口和模板资源统一由框架提供。
+`yuanbootctl-python[all]` 会安装全部标准组件。PyPI 安装方式需要 Python 3.11+。
+
+业务项目也可使用 Git tag 固定框架版本：
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.4'
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.5'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -64,6 +76,8 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
+生成的项目默认保持 Git tag 依赖；使用 PyPI 时可将依赖改为 `yuanboot==0.1.5`、
+`yuanboot[all]==0.1.5`（gRPC 项目使用 `yuanboot[grpc]==0.1.5`）。
 
 ## 项目模板
 
