@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from yuanboot import Configuration, ConfigurationBuilder, HostBuilder, HostEnvironment
+from yuanboot._version import __version__
 from yuanboot.components.nacos import (
     NacosClient,
     NacosConfigurationSource,
@@ -41,7 +42,7 @@ def test_registration_matches_go_metadata_and_weight():
         assert (instance.group, instance.cluster) == ("TEST", "C1")
         assert instance.healthy and instance.enabled and instance.ephemeral
         assert instance.metadata == {
-            "yuanboot_version": "0.1.0",
+            "yuanboot_version": __version__,
             "yuanboot_env": "prod",
             "yuanboot_author": "jackson",
             "yuanboot_application_description": "quickly,quickly,quickly,quickly,quickly!!!!!",

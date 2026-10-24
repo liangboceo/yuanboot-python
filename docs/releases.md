@@ -7,8 +7,8 @@
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.0'
-yuanbootctl new mvc -n orders --framework-ref v0.1.0
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1'
+yuanbootctl new mvc -n orders --framework-ref v0.1.1
 cd orders
 python -m pip install -e '.[dev,components]'
 yuanbootctl run
@@ -21,12 +21,12 @@ yuanbootctl run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.0",
+  "yuanboot @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.0",
+  "yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1",
 ]
 ```
 
@@ -71,12 +71,12 @@ ruff check .
 ruff format --check .
 python -m build
 python scripts/check_distribution.py
-python scripts/check_release.py v0.1.0
+python scripts/check_release.py v0.1.1
 git add .
-git commit -m "Release yuanboot Python 0.1.0"
-git tag -a v0.1.0 -m "yuanboot Python 0.1.0"
+git commit -m "Release yuanboot Python 0.1.1"
+git tag -a v0.1.1 -m "yuanboot Python 0.1.1"
 git push origin master
-git push origin v0.1.0
+git push origin v0.1.1
 ```
 
 首次发布后在仓库设置中将默认分支设为 `master`。

@@ -17,6 +17,9 @@ components = [__YUANBOOT_COMPONENTS_REQUIREMENT__]
 [tool.hatch.build.targets.wheel]
 packages = ["__PACKAGE__"]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.yuanboot]
 kind = "__KIND__"
 app = "__PACKAGE__.main:app"

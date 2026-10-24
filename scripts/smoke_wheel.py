@@ -9,7 +9,9 @@ import venv
 from pathlib import Path
 
 wheel = (
-    Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else next(Path("dist").glob("*.whl")).resolve()
+    Path(sys.argv[1]).resolve()
+    if len(sys.argv) > 1
+    else max(Path("dist").glob("*.whl"), key=lambda path: path.stat().st_mtime).resolve()
 )
 with tempfile.TemporaryDirectory(prefix="yuanboot-wheel-") as directory:
     root = Path(directory)
@@ -31,6 +33,8 @@ with tempfile.TemporaryDirectory(prefix="yuanboot-wheel-") as directory:
     for template in ("mvc", "grpc"):
         name = "wheel_" + template
         run("-m", "yuanboot", "new", template, "-n", name, "-p", str(root))
+        # Verify the business package accepts its generated Git direct dependency metadata.
+        run("-m", "pip", "install", "--no-deps", "-e", ".", cwd=root / name)
         print(run("-m", "pytest", "-q", cwd=root / name).strip())
     report = {
         "wheel": wheel.name,

@@ -35,8 +35,8 @@ curl -X POST http://127.0.0.1:8080/api/greet \
 业务项目默认以 Git tag 固定框架版本，无需发布 PyPI：
 
 ```bash
-python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.0'
-yuanbootctl new mvc -n orders --framework-ref v0.1.0
+python -m pip install 'yuanboot[all] @ git+https://github.com/liangboceo/yuanboot-python.git@v0.1.1'
+yuanbootctl new mvc -n orders --framework-ref v0.1.1
 ```
 
 框架版本只维护在 `src/yuanboot/_version.py`；业务版本独立维护。
@@ -57,7 +57,7 @@ yuanbootctl new mvc -n orders --framework-ref v0.1.0
 yuanbootctl new mvc -n my-app -p /tmp
 yuanbootctl new console -n worker -p /tmp
 yuanbootctl new grpc -n rpc-demo -p /tmp
-yuanbootctl new webapi -n orders --framework-ref v0.1.0
+yuanbootctl new webapi -n orders --framework-ref v0.1.1
 yuanbootctl run --profile prod --port 9000
 yuanbootctl run --workers 2
 yuanbootctl build                 # python -m build，输出 wheel/sdist

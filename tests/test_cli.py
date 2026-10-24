@@ -61,6 +61,7 @@ def test_generated_project_runs_its_tests_and_routes(template, tmp_path):
     with (project / "pyproject.toml").open("rb") as stream:
         metadata = tomllib.load(stream)
     assert metadata["tool"]["yuanboot"]["module"] == f"{package}.main"
+    assert metadata["tool"]["hatch"]["metadata"]["allow-direct-references"] is True
     assert (project / ".gitignore").exists()
     assert (project / "Dockerfile").exists()
     result = subprocess.run(
