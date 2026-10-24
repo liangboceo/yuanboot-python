@@ -3,9 +3,9 @@ from pathlib import Path
 from yuanboot import ConfigurationBuilder
 from yuanboot.web import WebHostBuilder
 
-from .startup import Startup
+from __PACKAGE__.startup import Startup
 
-ROOT = Path.cwd()
+ROOT = Path.cwd() if (Path.cwd() / "config.yml").is_file() else Path(__file__).resolve().parents[1]
 
 
 def create_app():

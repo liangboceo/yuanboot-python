@@ -3,12 +3,14 @@ from pathlib import Path
 from yuanboot import ConfigurationBuilder
 from yuanboot.console import HostBuilder
 
-from .worker import Worker
+from __PACKAGE__.worker import Worker
+
+ROOT = Path.cwd() if (Path.cwd() / "config.yml").is_file() else Path(__file__).resolve().parents[1]
 
 
 def create_host():
     builder = (
-        ConfigurationBuilder(Path.cwd())
+        ConfigurationBuilder(ROOT)
         .add_yaml_file("config")
         .add_environment()
     )

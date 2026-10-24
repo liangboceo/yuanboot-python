@@ -211,3 +211,12 @@ host = (
 宿主启动与 Swagger 文档显示框架版本、版权和 MIT 许可，详细配置见核心组件文档。
 可选 `pip install -e ".[jwt]"` 后使用 `yuanboot.web.security.JwtBearer` 作为 FastAPI Security 依赖验证 JWT。
 
+
+## PyCharm 调试与直接运行
+
+模板提供项目根目录 `main.py` 和 `.run/yuanboot.run.xml`。
+使用项目虚拟环境安装 `pip install -e '.[dev]'` 后，直接运行或 Debug 根目录 `main.py`，
+也可从项目根目录执行 `python -m __PACKAGE__.main`（将 `__PACKAGE__` 替换为业务包名）。
+PyCharm 手动配置使用 Module name `__PACKAGE__.main`，Working directory 选择项目根目录。
+包内入口使用绝对导入，业务项目安装后也支持直接运行 `__PACKAGE__/main.py`。
+配置优先读取当前目录的 `config.yml`，当前目录没有配置时回退到项目根目录。

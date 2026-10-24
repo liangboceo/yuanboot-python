@@ -34,7 +34,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.7
+VERSION=0.1.8
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -56,9 +56,9 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.1.7'
+python -m pip install 'yuanboot[all]==0.1.8'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.1.7
+python -m pip install yuanbootctl-python==0.1.8
 yuanbootctl-python --version
 ```
 
@@ -70,7 +70,7 @@ yuanbootctl-python --version
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanbootctl-python[all]==0.1.7'
+python -m pip install 'yuanbootctl-python[all]==0.1.8'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -79,14 +79,24 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.1.7`，
-组件固定 `yuanboot[all]==0.1.7`，gRPC 固定 `yuanboot[grpc]==0.1.7`。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.1.8`，
+组件固定 `yuanboot[all]==0.1.8`，gRPC 固定 `yuanboot[grpc]==0.1.8`。
 版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
-可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.1.7` 切换为 Git tag 依赖。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.1.8` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
 草稿 Release 在公开发布时触发同步；上传失败可手动重跑 **Publish PyPI**。详见[发布说明](docs/releases.md)。
+
+
+## PyCharm 调试与直接运行
+
+模板提供项目根目录 `main.py` 和 `.run/yuanboot.run.xml`。
+使用项目虚拟环境安装 `pip install -e '.[dev]'` 后，直接运行或 Debug 根目录 `main.py`，
+也可从项目根目录执行 `python -m demo.main`（将 `demo` 替换为业务包名）。
+PyCharm 手动配置使用 Module name `demo.main`，Working directory 选择项目根目录。
+包内入口使用绝对导入，业务项目安装后也支持直接运行 `demo/main.py`。
+配置优先读取当前目录的 `config.yml`，当前目录没有配置时回退到项目根目录。
 
 ## 项目模板
 

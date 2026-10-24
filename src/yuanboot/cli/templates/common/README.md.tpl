@@ -22,6 +22,23 @@ python -m pip install -e ".[dev]"
 yuanbootctl-python run
 ```
 
+### PyCharm 与直接启动
+
+选择项目 `.venv` 作为解释器，并先运行上述依赖安装命令。
+可以直接运行或 Debug 项目根目录的 `main.py`：
+
+```bash
+python main.py
+# 也可以从项目根目录按模块启动：
+python -m __PACKAGE__.main
+```
+
+模板附带 `.run/yuanboot.run.xml`，打开项目后可选择 `yuanboot (__PROJECT__)` 调试配置。
+手动配置 PyCharm 时，选择 **Module name**，填写 `__PACKAGE__.main`，
+Working directory 设置为项目根目录，解释器选择项目 `.venv/bin/python`。
+包内 `__PACKAGE__/main.py` 使用绝对导入；安装业务项目后也支持直接运行该文件。
+配置优先从当前目录读取 `config.yml`，当前目录没有配置时回退到项目根目录。
+
 框架默认通过 `pyproject.toml` 从公开 PyPI 安装，依赖版本与生成工具的框架版本一致。
 基础依赖、`components` 中的全部组件以及 gRPC 依赖固定同一版本，发布新工具后自动使用新版本。
 已生成项目保留原版本；升级时统一修改框架版本并重新锁定依赖。
