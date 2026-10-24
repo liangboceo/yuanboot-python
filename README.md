@@ -40,6 +40,8 @@ yuanbootctl new mvc -n orders --framework-ref v0.1.2
 ```
 
 框架版本只维护在 `src/yuanboot/_version.py`；业务版本独立维护。
+发布入口与 Go 一致：GitHub **Actions → Build Release → Run workflow**，填写 `version`（不带 `v`），
+测试、构建通过后自动同步版本并创建 tag / Release，上传 wheel 和源码包。
 详见 [组件使用与移植范围](docs/components.md)、[Git 发布和依赖管理](docs/releases.md)。
 
 | 模板 | 内容 |

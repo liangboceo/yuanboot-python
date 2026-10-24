@@ -1131,8 +1131,8 @@ requires-dist = [
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.2" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "yuanboot", git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.1" },
-    { name = "yuanboot", extras = ["all"], marker = "extra == 'cloud'", git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.1" },
+    { name = "yuanboot", git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.2" },
+    { name = "yuanboot", extras = ["all"], marker = "extra == 'cloud'", git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.2" },
 ]
 provides-extras = ["dev", "cloud"]
 
@@ -1445,8 +1445,8 @@ wheels = [
 
 [[package]]
 name = "yuanboot"
-version = "0.1.1"
-source = { git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.1#59af01133d7b10ae6d1fd7545654d30c35671d58" }
+version = "0.1.2"
+source = { git = "https://github.com/liangboceo/yuanboot-python.git?rev=v0.1.2#43ff68945d39e5d081f82b9fec2043fbb151c59f" }
 dependencies = [
     { name = "fastapi" },
     { name = "jinja2" },

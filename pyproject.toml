@@ -43,7 +43,7 @@ packages = ["src/yuanboot"]
 path = "src/yuanboot/_version.py"
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/docs", "/README.md", "/LICENSE", "/pyproject.toml"]
+include = ["/src", "/tests", "/docs", "/scripts/prepare_release.py", "/README.md", "/LICENSE", "/pyproject.toml"]
 exclude = ["**/__pycache__", "**/*.pyc", "**/.env*", "**/data", "**/*.log"]
 
 [tool.pytest.ini_options]

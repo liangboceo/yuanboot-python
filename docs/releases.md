@@ -62,7 +62,27 @@ python -m pip install -e /absolute/path/to/yuanboot_python
 
 ## 发布流程
 
-修改版本源、更新文档后执行：
+与 Go 仓库一致，通过 GitHub Actions 手动发布：
+
+1. 将待发布代码推送到 `master`。
+2. 打开仓库 **Actions → Build Release → Run workflow**，选择 `master`。
+3. 填写 `version`（例如 `0.1.3`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
+4. 工作流同步版本源，在 Python 3.11–3.14 上测试并构建，验证全新环境安装和模板生成。
+5. 全部通过后，提交版本变更到 `master`，创建 `v<version>` tag，生成 GitHub Release 并上传 wheel、sdist。
+
+也可使用 GitHub CLI 手动触发：
+
+```bash
+gh workflow run Release.yml --ref master \
+  -f version=0.1.3 -f prerelease=false -f draft=false
+```
+
+已存在的 tag 会被拒绝，不会覆盖。构建期间如果 `master` 有更新，发布中止，需从最新 `master` 重新运行。
+`draft=true` 只控制 GitHub Release 是否为草稿，Git tag 仍会创建并可供业务依赖。
+工作流使用仓库自带的 `GITHUB_TOKEN`，不需要额外配置发布密钥，不上传 PyPI。
+由该 token 推送的 tag 不会再次触发 CI，发布工作流本身已完成同等检查。
+
+本地开发时可先执行检查：
 
 ```bash
 python -m pytest -q
@@ -72,16 +92,11 @@ ruff format --check .
 python -m build
 python scripts/check_distribution.py
 python scripts/check_release.py v0.1.2
-git add .
-git commit -m "Release yuanboot Python 0.1.2"
-git tag -a v0.1.2 -m "yuanboot Python 0.1.2"
-git push origin master
-git push origin v0.1.2
 ```
 
 首次发布后在仓库设置中将默认分支设为 `master`。
 `.github/workflows/ci.yml` 在 master、PR 和 tag 上测试 Python 3.11–3.14；构建 wheel/sdist 并保留 Actions 产物。
-CI 校验 tag 与版本源一致，不上传 PyPI。框架 wheel 包含模板资源，sdist 明确排除本地环境、数据和凭据。
+CI 校验 tag 与版本源一致。框架 wheel 包含模板资源，sdist 明确排除本地环境、数据和凭据。
 
 ## 锁定完整依赖
 
