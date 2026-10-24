@@ -1,7 +1,0 @@
-yuanboot:
-  application:
-    name: taskboard
-    server:
-      address: ":8080"
-database:
-  path: "./data/taskboard.db"

@@ -1,3 +1,0 @@
-# Loaded over config.yml when YUANBOOT_PROFILE=dev (the default).
-database:
-  path: "./data/taskboard.db"

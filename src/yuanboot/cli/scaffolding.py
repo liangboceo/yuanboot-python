@@ -70,7 +70,7 @@ def create_project(
     framework_ref: str | None = None,
 ) -> Path:
     if template not in TEMPLATES:
-        raise ValueError(f"Unknown template {template!r}. Use 'yuanbootctl new --list'.")
+        raise ValueError(f"Unknown template {template!r}. Use 'yuanbootctl-python new --list'.")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", name):
         raise ValueError(
             "Project name must start with a letter and contain letters, digits, '-' or '_'"

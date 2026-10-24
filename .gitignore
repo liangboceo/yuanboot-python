@@ -9,8 +9,7 @@ build/
 .env
 .env.*
 !.env.example
-reports/*.log
+*.log
 .DS_Store
 .idea/
 .vscode/
-/examples/taskboard/data/

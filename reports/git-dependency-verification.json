@@ -1,7 +1,0 @@
-{
-  "framework_ref": "v0.1.1",
-  "remote_git_install": "passed",
-  "git_transport": "SSH",
-  "independent_business_tests": "15 passed",
-  "generated_mvc_install_and_test": "passed"
-}

@@ -1,0 +1,59 @@
+name: Build CLI binaries
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Optional version override for a release
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  binaries:
+    name: CLI (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux_amd64
+          - os: ubuntu-24.04-arm
+            target: linux_arm64
+          - os: macos-15-intel
+            target: darwin_amd64
+          - os: macos-15
+            target: darwin_arm64
+          - os: windows-2022
+            target: windows_amd64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Set release version
+        if: inputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python packaging/prepare_release.py "$RELEASE_VERSION"
+        shell: bash
+      - run: python -m pip install -e '.[all,binary]'
+      - run: python packaging/build_binary.py
+      - name: CLI version
+        shell: bash
+        run: |
+          executable=dist/bin/yuanbootctl-python
+          if [ "$RUNNER_OS" = Windows ]; then executable="$executable.exe"; fi
+          "$executable" --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-binaries-${{ matrix.target }}
+          path: |
+            dist/yuanbootctl-python_*.tar.gz
+            dist/yuanbootctl-python_*.zip
+          if-no-files-found: error

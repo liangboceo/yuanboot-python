@@ -1,33 +1,18 @@
-# 组件使用与 Go 实现对应
+# 核心组件
 
 安装 `yuanboot[all]` 启用所有可选组件，或按需选择 `mysql,redis,nacos,jwt,http,apollo,scheduler,grpc,discovery,xxljob`。
-Python 版采用 Python SDK 和标准库表达 Go 版的能力，不照搬 goroutine、GORM、Viper 的内部实现。
 
-## 对应清单与验证范围
-
-| Go 模块 | Python 实现 | 验证与边界 |
-| --- | --- | --- |
-| abstractions / console / dependencyinjection | HostBuilder、生命周期、DI、作用域、事件 | 自动测试，启动失败回滚与退出清理 |
-| web / MVC / Swagger / JWT / actuator | FastAPI、控制器、签名绑定、JWT、健康、Prometheus | 自动测试和真实 HTTP；支持原生 WebSocket、CORS、静态文件与视图 |
-| cli/yuanbootctl | 六类模板、new/run/build/version、Git tag 依赖 | 每个模板生成后实际执行测试 |
-| configuration / OptionsSnapshot | 分层配置、bind、options().current_value、热更新 | 原子替换，错误保留旧快照 |
-| configuration/nacos | Nacos HTTP OpenAPI、认证、重载 | 用户 Nacos 2.4.3 实服联调 |
-| configuration/apollo | Apollo HTTP 配置、签名、轮询 | 协议测试，未做 Apollo 实服联调 |
-| datasources/mysql / GORM | SQLAlchemy Core/ORM、池、事务、请求级 Session | MySQL 实服提交/回滚/业务测试 |
-| cache/redis / datasources/redis | redis-py、JSON TTL、锁、原生 Redis API | Redis 实服缓存/TTL/锁；Cluster 配置未做集群实测 |
-| xlog | 标准 logging、JSON/text、文件轮转、级别、request_id | 格式、脱敏、文件与请求测试 |
-| servicediscovery/nacos | 注册、心跳、下线、查询、监听、选择 | 实服验证，metadata 与 Go 八字段一致 |
-| servicediscovery/memory | MemoryDiscovery | 自动测试，限当前进程 |
-| servicediscovery/consul、eureka、etcd | HTTP/JSON 协议适配 | 请求契约测试；尚未接入对应实服，etcd 需要 v3 JSON gateway |
-| servicediscovery/strategy | round-robin、按实例权重 random | 已实现；Go weight-time 策略与发现缓存暂未移植 |
-| httpclient | HttpClientFactory、池、JSON/form/multipart、lb:// 发现 | 协议测试；同步 API，async 路由用线程池调用 |
-| task | Scheduler、间隔任务、带秒 Cron、时区 | 自动测试，异常隔离、停机等待 |
-| scheduler / XXL-Job | WebHost 的 BEAN 执行器、认证、注册、回调、日志、kill | 协议测试；仅协作取消 async handler；无脚本 GLUE、持久化回调重试队列和高级阻塞策略 |
-| email | SMTP、TLS、文本/HTML、附件 | 构造与连接流程测试；未实际发送邮件 |
-| mq/observer | Observer 异步广播 | 自动测试；Go 此模块也只是进程内广播，不是消息代理 |
-| grpc | grpc.aio、DI/宿主、TLS/interceptors、健康、通道工厂 | 本机真实 protobuf RPC；每次创建 lb 通道时发现实例 |
-| captcha、utils、二进制序列化工具 | 暂未逐个移植 | 可按业务需要接入 Python 库 |
-| IoT/Kafka、admin 业务示例 | 暂未移植 | 不包含在本框架组件交付范围内 |
+| 组件 | 能力 |
+| --- | --- |
+| MySQL | SQLAlchemy Core / ORM、连接池、事务与请求作用域 Session |
+| Redis | JSON 缓存、TTL、锁与原生 redis-py 客户端 |
+| 配置中心 | Nacos、Apollo、轮询热更新与类型化配置快照 |
+| 服务发现 | Nacos、Consul、Eureka、etcd、进程内注册表 |
+| 日志 | JSON / 文本、文件轮转、日志级别、Request ID |
+| HTTP | 连接池、JSON / 表单 / multipart、lb:// 服务发现 |
+| 任务 | 间隔任务、Cron、XXL-Job BEAN 执行器 |
+| 通知 | SMTP 邮件、进程内 Observer 广播 |
+| gRPC | grpc.aio、宿主生命周期、TLS、健康检查与通道工厂 |
 
 ## 统一启用组件
 
@@ -93,10 +78,10 @@ yuanboot:
         region: cn
 ```
 
-MySQL 数据库需要预先创建；业务表由应用管理。支持 Go 的 `datasource.db.type=mysql`、
+MySQL 数据库需要预先创建；业务表由应用管理。兼容 `datasource.db.type=mysql`、
 `url: tcp(host:port)/database?charset=utf8mb4`、`max_open_conns`、`max_idle_conns`、`conn_max_lifetime`。
-连接池使用 SQLAlchemy 的 `pool_size + max_overflow`；Go 的无限连接、空闲回收细节并非逐项等价。
-Redis 支持 Go 的 `host:port` URL，Cluster 用 `cluster: true` 且 db=0。
+连接池使用 SQLAlchemy 的 `pool_size + max_overflow`。
+Redis 支持 `host:port` URL，Cluster 用 `cluster: true` 且 db=0。
 
 ## MySQL、Redis 与请求作用域
 
@@ -150,7 +135,7 @@ configuration = (
 
 ## Nacos metadata 与注册
 
-严格保留 Go registrar 的默认字段和值，所有 metadata 值为字符串：
+注册时提供以下默认 metadata，所有值均为字符串：
 
 | 字段 | 默认值来源 |
 | --- | --- |
@@ -165,7 +150,7 @@ configuration = (
 
 权重 10，enabled/healthy/ephemeral 为 true；group/cluster 空值回退 DEFAULT_GROUP/DEFAULT。
 自定义 `instance_metadata` 可覆盖字段。context-path 是注册描述，实际 HTTP 挂载路径需由路由配置。
-兼容 Go 的 `cloud.discovery.metadata.url/port/namespace/group/cluster/auth/configserver.dataid` bootstrap 结构。
+支持 `cloud.discovery.metadata.url/port/namespace/group/cluster/auth/configserver.dataid` bootstrap 结构。
 所有组件完成启动后注册；正常退出注销；心跳故障后重试，实例丢失重新注册。
 多实例同名同 IP 必须使用不同端口；`register-enable: false` 可作为只发现不注册的客户端。
 gRPC 服务注册需使用真实 RPC 监听端口；显式配置 discovery.port 可以覆盖。
@@ -190,7 +175,7 @@ host = (
     .use_scheduler(lambda scheduler: scheduler.add("refresh", refresh, interval=30))
     .build()
 )
-# Cron 与 Go 相同：秒 分 时 日 月 [星期]，星期 0=周日。
+# Cron 格式：秒 分 时 日 月 [星期]，星期 0=周日。
 # scheduler.add("daily", refresh, cron="0 0 2 * * *", timezone="Asia/Shanghai")
 
 observer = Observer()
@@ -220,7 +205,7 @@ host = (
 ```
 
 gRPC 地址配置 `yuanboot.grpc.address`。支持 `configure_server(..., interceptors=..., credentials=...)`；
-业务生成的 protobuf servicer 可直接注册到 grpc.aio server。`yuanbootctl new grpc` 的示例无需 protoc 即可运行。
+业务生成的 protobuf servicer 可直接注册到 grpc.aio server。`yuanbootctl-python new grpc` 的示例无需 protoc 即可运行。
 
 ```python
 from yuanboot.components.xxljob import use_xxl_job
@@ -236,6 +221,6 @@ builder = use_xxl_job(WebHostBuilder(configuration), {"syncOrders": sync_orders}
 
 XXL 配置在 `yuanboot.application.xxl`：`admin_url`、`access_token`、`registry_key`、
 `executor_url`（例如 http://worker:8080/xxl-job/）、`log_dir`。
-兼容 Go 的 serverAddr/accessToken/registryKey 名称；监听端口由当前 WebHost 管理。
+兼容 serverAddr/accessToken/registryKey 名称；监听端口由当前 WebHost 管理。
 支持 `/xxl-job/beat`、idleBeat、run、kill、log，支持 BEAN 分片参数、日志与结果回调。
 正在执行同 jobId 时返回 busy；回调只在内存重试，进程退出/崩溃不保证补发；生产接入需按场景补持久化策略。

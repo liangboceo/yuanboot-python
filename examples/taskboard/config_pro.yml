@@ -1,3 +1,0 @@
-# Supply secrets through environment variables, never commit credentials.
-database:
-  path: "${TASKBOARD_DATABASE:./data/taskboard.db}"
