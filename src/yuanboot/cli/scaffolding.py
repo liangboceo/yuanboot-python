@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import keyword
 import re
+import secrets
 import shutil
 from dataclasses import dataclass
 from importlib.resources import files
@@ -33,6 +34,11 @@ TEMPLATES = {
         ),
         ProjectTemplate("console", "Console host with managed background services", ("console",)),
         ProjectTemplate("grpc", "gRPC service with protobuf and managed host lifecycle", ("grpc",)),
+        ProjectTemplate(
+            "admin",
+            "Administration UI and Python API with users, roles, menus and departments",
+            ("web", "admin"),
+        ),
     )
 }
 
@@ -67,6 +73,8 @@ def _walk(resource, prefix=Path()):
             yield from _walk(child, path)
         elif child.name.endswith(".tpl"):
             yield path.with_suffix(""), child.read_text(encoding="utf-8")
+        elif child.name.endswith(".bin"):
+            yield path.with_suffix(""), child.read_bytes()
 
 
 def create_project(
@@ -94,6 +102,7 @@ def create_project(
         "__PACKAGE__": package,
         "__TEMPLATE__": template,
         "__YUANBOOT_VERSION__": __version__,
+        "__ADMIN_JWT_SECRET__": secrets.token_urlsafe(48),
         "__FRAMEWORK_REF__": framework_requirement(
             repository=framework_repo, ref=framework_ref, version=framework_version
         ),
@@ -102,7 +111,7 @@ def create_project(
             framework_requirement(
                 repository=framework_repo,
                 ref=framework_ref,
-                extras="grpc" if template == "grpc" else "",
+                extras="admin" if template == "admin" else "grpc" if template == "grpc" else "",
                 version=framework_version,
             )
         ),
@@ -117,9 +126,12 @@ def create_project(
     }
     for layer in ("common", *TEMPLATES[template].layers):
         for relative, content in _walk(root.joinpath(layer)):
-            target = str(relative).replace("__PACKAGE__", package)
-            for token, value in substitutions.items():
-                content = content.replace(token, value)
+            if template == "admin" and layer != "admin":
+                relative = Path(name + "-server") / relative
+            target = str(relative).replace("__PACKAGE__", package).replace("__PROJECT__", name)
+            if isinstance(content, str):
+                for token, value in substitutions.items():
+                    content = content.replace(token, value)
             rendered[target] = content
     destination = Path(path).expanduser().resolve() / name
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -129,7 +141,10 @@ def create_project(
         for relative, content in rendered.items():
             target = destination / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
+            if isinstance(content, bytes):
+                target.write_bytes(content)
+            else:
+                target.write_text(content, encoding="utf-8")
     except BaseException:
         shutil.rmtree(destination)
         raise

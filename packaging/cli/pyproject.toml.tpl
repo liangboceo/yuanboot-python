@@ -20,6 +20,7 @@ dependencies = ["yuanboot==__VERSION__"]
 
 [project.optional-dependencies]
 all = ["yuanboot[all]==__VERSION__"]
+admin = ["yuanboot[admin]==__VERSION__"]
 
 [project.urls]
 Homepage = "https://github.com/liangboceo/yuanboot-python"

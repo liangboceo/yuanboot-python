@@ -226,10 +226,18 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 print_banner(cli=True)
                 print(f"Created {args.template}: {destination}")
-                print(f'cd "{destination}"')
+                backend = (
+                    destination / (args.name + "-server")
+                    if args.template == "admin"
+                    else destination
+                )
+                print(f'cd "{backend}"')
                 if not getattr(sys, "frozen", False):
                     print('python -m pip install -e ".[dev]"')
                 print("yuanbootctl-python run")
+                if args.template == "admin":
+                    frontend = destination / (args.name + "-web")
+                    print(f'Frontend: cd "{frontend}" && pnpm install && pnpm dev')
         elif args.command == "run":
             return _run(args)
         elif args.command == "build":

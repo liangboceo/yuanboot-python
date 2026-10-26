@@ -21,7 +21,7 @@
 - 统一启动版权信息、zap / logrus 文本与 JSON 日志、请求追踪、健康检查、Prometheus 和 JWT。
 - Swagger 展示框架版本、版权、联系信息与 MIT 许可，并保留业务文档配置。
 - HTTP 客户端、定时任务、SMTP、gRPC 和 XXL-Job BEAN 执行器。
-- `yuanbootctl-python` 提供六类项目模板、运行和构建命令。
+- `yuanbootctl-python` 提供七类项目模板、运行和构建命令。
 
 ## 下载命令行工具
 
@@ -36,7 +36,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.1.9
+VERSION=0.2.0
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -58,9 +58,9 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.1.9'
+python -m pip install 'yuanboot[all]==0.2.0'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.1.9
+python -m pip install yuanbootctl-python==0.2.0
 yuanbootctl-python --version
 ```
 
@@ -72,7 +72,7 @@ yuanbootctl-python --version
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanbootctl-python[all]==0.1.9'
+python -m pip install 'yuanbootctl-python[all]==0.2.0'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -81,10 +81,10 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.1.9`，
-组件固定 `yuanboot[all]==0.1.9`，gRPC 固定 `yuanboot[grpc]==0.1.9`。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.2.0`，
+组件固定 `yuanboot[all]==0.2.0`，gRPC 固定 `yuanboot[grpc]==0.2.0`。
 版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
-可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.1.9` 切换为 Git tag 依赖。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.2.0` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
@@ -110,6 +110,7 @@ PyCharm 手动配置使用 Module name `demo.main`，Working directory 选择项
 | `microservice` | Web API、监控和后台服务 |
 | `console` | 命令行宿主与后台任务 |
 | `grpc` | gRPC 服务与健康检查 |
+| `admin` | Vue 3 管理前端、用户、角色、菜单、部门、系统配置与权限 API |
 
 模板包含项目元数据、配置、Dockerfile、Compose、README 和 `spec` 开发文档。
 每个新项目默认提供以下文档，可离线查阅：
@@ -131,6 +132,20 @@ yuanbootctl-python run --workers 2
 yuanbootctl-python build
 yuanbootctl-python version
 ```
+
+## 管理后台
+
+```bash
+python -m pip install 'yuanbootctl-python[admin]==0.2.0'
+yuanbootctl-python new admin -n my-admin
+cd my-admin/my-admin-server
+python -m pip install -e '.[dev]'
+yuanbootctl-python run
+```
+
+另开终端，在 `my-admin/my-admin-web` 执行 `pnpm install --frozen-lockfile && pnpm dev`。
+访问 <http://127.0.0.1:8848/>，开发初始账号 `admin / admin123`。
+默认使用 SQLite 和本地会话，支持切换 MySQL、Redis、Nacos。模板包含完整前后端源码与离线文档，详见 [管理后台](docs/admin.md)。
 
 ## 简单示例
 
@@ -205,6 +220,7 @@ yuanboot:
 
 - [框架开发指南](docs/framework.md)
 - [组件配置与使用](docs/components.md)
+- [管理后台模板](docs/admin.md)
 - [命令行、发布与依赖管理](docs/releases.md)
 
 启动控制台显示 yuanboot logo 与彩色启动信息，保留版本及版权标识。日志支持 `color: auto / always / never`、`banner: false`；文件和 JSON 日志不含框架颜色码。详见[日志配置](docs/components.md#统一日志与启动信息)。

@@ -1,0 +1,20 @@
+.venv/
+node_modules/
+dist/
+build/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+.env
+.env.*
+!.env.example
+**/data/
+.DS_Store
+# Vite build helpers and non-secret environment defaults are application source.
+!__PROJECT__-web/build/
+!__PROJECT__-web/build/**
+!__PROJECT__-web/.env
+!__PROJECT__-web/.env.development
+!__PROJECT__-web/.env.production
+!__PROJECT__-web/.env.staging

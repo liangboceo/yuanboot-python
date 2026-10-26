@@ -7,11 +7,14 @@ hiddenimports = []
 for package in ("yuanboot", "uvicorn", "grpc_health", "google.protobuf"):
     hiddenimports += collect_submodules(package)
 hiddenimports += ["sqlalchemy.dialects.mysql.pymysql", "sqlalchemy.dialects.sqlite.pysqlite"]
+hiddenimports += ["PIL.Image", "PIL.ImageDraw", "PIL.ImageFont", "multipart", "python_multipart"]
 
 analysis = Analysis(
     [str(root / "src/yuanboot/cli/entrypoint.py")],
     pathex=[str(root / "src")],
-    datas=collect_data_files("yuanboot", includes=["cli/templates/**/*.tpl", "logging.json"])
+    datas=collect_data_files(
+        "yuanboot", includes=["cli/templates/**/*.tpl", "cli/templates/**/*.bin", "logging.json"]
+    )
     + copy_metadata("yuanboot"),
     hiddenimports=hiddenimports,
     excludes=["pytest", "IPython", "matplotlib", "numpy", "pandas", "tkinter"],
