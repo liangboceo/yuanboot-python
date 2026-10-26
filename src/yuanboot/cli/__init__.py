@@ -15,6 +15,7 @@ from yuanboot import logging as framework_logging
 from yuanboot.cli.scaffolding import TEMPLATES, create_project
 from yuanboot.configuration import ConfigurationBuilder
 from yuanboot.environment import PROFILES
+from yuanboot.terminal import print_banner
 from yuanboot.web.application import server_address
 
 
@@ -223,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
                     framework_ref=args.framework_ref,
                     framework_version=args.framework_version,
                 )
+                print_banner(cli=True)
                 print(f"Created {args.template}: {destination}")
                 print(f'cd "{destination}"')
                 if not getattr(sys, "frozen", False):
@@ -256,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
                     env=_external_environment(os.environ),
                 )
         else:
+            print_banner(cli=True)
             print(f"yuanbootctl-python {__version__}")
         return 0
     except (OSError, ValueError) as exc:

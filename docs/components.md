@@ -231,11 +231,17 @@ XXL 配置在 `yuanboot.application.xxl`：`admin_url`、`access_token`、`regis
 启动时输出 yuanboot-python 版本、`Copyright (c) 2026 jackson liang`、MIT 许可、应用名、PID 和运行环境。
 文本日志默认 `log_type: zap`，可选 `logrus`；`json: true` 切换到结构化 JSON。
 
+启动控制台显示蓝色 yuanboot logo、绿色标题和启动提示，版本、PID、应用名、环境使用蓝色，路径使用黄色，运行模式提示使用红色。
+`color: auto` 自动识别终端和 PyCharm，可设 `always` 强制颜色或 `never` 关闭；自动模式遵循 `NO_COLOR` 和 `FORCE_COLOR`。
+`banner: false` 关闭 logo。文件日志始终不输出框架颜色码；JSON 模式省略多行 logo，保留结构化启动日志和版权信息。
+
 ```yaml
 yuanboot:
   logging:
     level: INFO
     log_type: zap
+    color: auto
+    banner: true
     json: false
     console: true
     file: ./logs/application.log

@@ -17,10 +17,19 @@ from pydantic import BaseModel, Field
 
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import HostedService
+from yuanboot.terminal import ColorMode, colorize, print_banner, use_color
 
 request_id_context: ContextVar[str] = ContextVar("yuanboot_request_id", default="")
 _PRIVATE = re.compile(r"password|secret|authorization|access.?token|credential", re.IGNORECASE)
-_STANDARD = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime", "request_id", "app"}
+_STANDARD = set(logging.makeLogRecord({}).__dict__) | {
+    "message",
+    "asctime",
+    "request_id",
+    "app",
+    "color_message",
+    "_yuanboot_color",
+    "_yuanboot_value_color",
+}
 
 
 def server_log_config() -> dict:
@@ -30,9 +39,10 @@ def server_log_config() -> dict:
 class TextFormatter(logging.Formatter):
     """Yuanboot zap/logrus console layout, with hundredths of a second."""
 
-    def __init__(self, log_type="zap"):
+    def __init__(self, log_type="zap", color: ColorMode = "auto"):
         super().__init__()
         self.log_type = log_type
+        self.color = color
 
     def format(self, record):
         timestamp = time.strftime("%Y/%m/%d %H:%M:%S", self.converter(record.created))
@@ -40,6 +50,15 @@ class TextFormatter(logging.Formatter):
         prefix = f"yuanboot-nio-{record.process}-{record.thread}"
         level = {"WARNING": "WARN", "CRITICAL": "FATAL"}.get(record.levelname, record.levelname)
         message = record.getMessage()
+        if use_color(self.color):
+            if whole_color := getattr(record, "_yuanboot_color", None):
+                message = colorize(message, whole_color, True)
+            elif value_color := getattr(record, "_yuanboot_value_color", None):
+                # Keep the original record clean for file/JSON handlers.
+                if isinstance(record.args, tuple):
+                    message = str(record.msg) % tuple(
+                        colorize(value, value_color, True) for value in record.args
+                    )
         if self.log_type == "logrus":
             text = f"{timestamp} - [{prefix}] - [{level}] {message} level={level}"
         else:
@@ -74,6 +93,8 @@ class LoggingOptions(BaseModel):
     level: str = "INFO"
     json_format: bool = Field(default=False, alias="json")
     console: bool = True
+    color: ColorMode = "auto"
+    banner: bool = True
     file: str | None = None
     max_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
     backup_count: int = Field(default=5, ge=0)
@@ -125,9 +146,6 @@ class LoggingManager:
         level = self.options.level.upper()
         if level not in logging.getLevelNamesMapping():
             raise ValueError("Invalid logging level")
-        formatter = (
-            JsonFormatter() if self.options.json_format else TextFormatter(self.options.log_type)
-        )
         try:
             # Route framework, application and server logs through one handler set.
             for logger_name in ("", "yuanboot", "uvicorn", "uvicorn.error", "uvicorn.access"):
@@ -156,7 +174,16 @@ class LoggingManager:
                     )
                 )
             for handler in self._handlers:
-                handler.setFormatter(formatter)
+                handler.setFormatter(
+                    JsonFormatter()
+                    if self.options.json_format
+                    else TextFormatter(
+                        self.options.log_type,
+                        self.options.color
+                        if not isinstance(handler, RotatingFileHandler)
+                        else "never",
+                    )
+                )
                 handler.addFilter(RequestContextFilter(name))
                 self.logger.addHandler(handler)
             self.logger.setLevel(level)
@@ -172,6 +199,14 @@ class LoggingManager:
 
     def get_logger(self, name: str = "app") -> logging.Logger:
         return get_logger(name)
+
+    def print_banner(self):
+        if self.options.banner and self.options.console and not self.options.json_format:
+            for handler in self._handlers:
+                if isinstance(handler, logging.StreamHandler) and not isinstance(
+                    handler, logging.FileHandler
+                ):
+                    print_banner(mode=self.options.color, stream=handler.stream)
 
     def close(self):
         if self._closed:

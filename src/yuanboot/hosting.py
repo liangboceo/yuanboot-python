@@ -132,13 +132,26 @@ class Host:
         try:
             from yuanboot.logging import LoggingManager
 
-            self.services.get_service(LoggingManager)
-            logger.info(":: yuanboot-python :: (version: %s)", __version__)
+            self.services.get_service(LoggingManager).print_banner()
             logger.info(NOTICE)
-            logger.info("Welcome to yuanboot, starting application ...")
-            logger.info("application running pid  :  %s", self.environment.pid)
-            logger.info("application name         :  %s", self.environment.application_name)
-            logger.info("application environment  :  %s", self.environment.profile)
+            logger.info(
+                "Welcome to yuanboot, starting application ...",
+                extra={"_yuanboot_color": "green"},
+            )
+            for message, value, color in (
+                ("yuanboot framework version :  %s", __version__, "blue"),
+                ("application running pid  :  %s", self.environment.pid, "blue"),
+                ("application name         :  %s", self.environment.application_name, "blue"),
+                ("application exec path    :  %s", os.getcwd(), "yellow"),
+                ("application environment  :  %s", self.environment.profile, "blue"),
+                (
+                    "running in %s mode , set YUANBOOT_PROFILE to dev / fat / uat / pro.",
+                    self.environment.profile,
+                    "red",
+                ),
+            ):
+                logger.info(message, value, extra={"_yuanboot_value_color": color})
+            logger.info("Starting server...", extra={"_yuanboot_color": "green"})
             await self.life.publish("starting", self)
             for service_type in self._hosted_types:
                 service = self.services.get_service(service_type)
@@ -150,7 +163,7 @@ class Host:
             self.life.state = "up"
             self._phase = "started"
             await self.life.publish("started", self)
-            logger.info("Server is Started.")
+            logger.info("Server is Started.", extra={"_yuanboot_color": "green"})
         except BaseException:
             try:
                 await self.stop()

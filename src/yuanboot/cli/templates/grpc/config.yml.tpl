@@ -6,5 +6,7 @@ yuanboot:
     shutdown_grace: 5
   logging:
     log_type: zap
+    color: auto
+    banner: true
     level: INFO
     console: true

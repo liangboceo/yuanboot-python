@@ -5,6 +5,8 @@ yuanboot:
       address: ":8080"
   logging:
     log_type: zap
+    color: auto
+    banner: true
     level: INFO
     json: false
     console: true
