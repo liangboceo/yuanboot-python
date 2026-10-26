@@ -6,8 +6,8 @@
 
 [![Build](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml/badge.svg)](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/tag/liangboceo/yuanboot-python?label=release&sort=semver)](https://github.com/liangboceo/yuanboot-python/releases)
-[![PyPI](https://img.shields.io/pypi/v/yuanboot?label=yuanboot)](https://pypi.org/project/yuanboot/)
-[![CLI](https://img.shields.io/pypi/v/yuanbootctl-python?label=yuanbootctl-python)](https://pypi.org/project/yuanbootctl-python/)
+[![PyPI](https://img.shields.io/pypi/v/yuanboot?label=yuanboot&cacheSeconds=300)](https://pypi.org/project/yuanboot/)
+[![CLI](https://img.shields.io/pypi/v/yuanbootctl-python?label=yuanbootctl-python&cacheSeconds=300)](https://pypi.org/project/yuanbootctl-python/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/github/license/liangboceo/yuanboot-python)](LICENSE)
 
