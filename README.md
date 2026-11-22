@@ -2,13 +2,13 @@
 
 作者：jackson liang。Copyright (c) 2026 jackson liang。
 
-简单、轻量、快速的 Python 微服务框架，基于 FastAPI、Uvicorn 和依赖注入构建，支持 Web API、MVC、gRPC 与后台服务。Python 3.11+。
+简单、轻量、快速的 Python 微服务框架，基于 FastAPI、Uvicorn 和依赖注入构建，支持 Web API、MVC、gRPC 与后台服务。Python 3.6.2+。
 
 [![Build](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml/badge.svg)](https://github.com/liangboceo/yuanboot-python/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/tag/liangboceo/yuanboot-python?label=release&sort=semver)](https://github.com/liangboceo/yuanboot-python/releases)
 [![PyPI](https://img.shields.io/pypi/v/yuanboot?label=yuanboot&cacheSeconds=300)](https://pypi.org/project/yuanboot/)
 [![CLI](https://img.shields.io/pypi/v/yuanbootctl-python?label=yuanbootctl-python&cacheSeconds=300)](https://pypi.org/project/yuanbootctl-python/)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.6.2%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/github/license/liangboceo/yuanboot-python)](LICENSE)
 
 ## 框架特色
@@ -36,7 +36,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.2.0
+VERSION=0.3.0
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -53,26 +53,28 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 业务增加其他 Python 依赖后，可使用 `run --python /path/to/.venv/bin/python` 选择业务环境。
 `build` 打包 Python 项目，需要业务环境安装 `build`，详见 [命令行与发布说明](docs/releases.md)。
 
+Python 3.6 / 3.7 自动使用兼容依赖，新版 Python 使用现代依赖；详见 [Python 版本支持](docs/python-compatibility.md)。
+
 ## 安装框架
 
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.2.0'
+python -m pip install 'yuanboot[all]==0.3.0'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.2.0
+python -m pip install yuanbootctl-python==0.3.0
 yuanbootctl-python --version
 ```
 
 `yuanbootctl-python` 自动依赖同版本的 `yuanboot`，命令入口和模板资源统一由框架提供。
-`yuanbootctl-python[all]` 会安装全部标准组件。PyPI 安装方式需要 Python 3.11+。
+`yuanbootctl-python[all]` 会安装全部标准组件。PyPI 安装方式需要 Python 3.6.2+。
 
 创建业务项目并安装依赖：
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanbootctl-python[all]==0.2.0'
+python -m pip install 'yuanbootctl-python[all]==0.3.0'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -81,10 +83,10 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.2.0`，
-组件固定 `yuanboot[all]==0.2.0`，gRPC 固定 `yuanboot[grpc]==0.2.0`。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.3.0`，
+组件固定 `yuanboot[all]==0.3.0`，gRPC 固定 `yuanboot[grpc]==0.3.0`。
 版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
-可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.2.0` 切换为 Git tag 依赖。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.3.0` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
@@ -136,7 +138,7 @@ yuanbootctl-python version
 ## 管理后台
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.2.0'
+python -m pip install 'yuanbootctl-python[admin]==0.3.0'
 yuanbootctl-python new admin -n my-admin
 cd my-admin/my-admin-server
 python -m pip install -e '.[dev]'

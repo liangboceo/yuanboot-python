@@ -1,5 +1,7 @@
 """Framework identity shared by startup logs and API documentation."""
 
+import typing
+
 from yuanboot._version import __version__
 
 PROJECT_URL = "https://github.com/liangboceo/yuanboot-python"
@@ -9,7 +11,7 @@ COPYRIGHT = f"Copyright (c) 2026 {AUTHOR}"
 NOTICE = f"yuanboot-python {__version__} | {COPYRIGHT} | MIT License"
 
 
-def swagger_description(description: str | None = None) -> str:
+def swagger_description(description: "typing.Union[str, None]" = None) -> "str":
     return (description or "").rstrip() + (
         f"\n\n---\nPowered by [yuanboot-python {__version__}]({PROJECT_URL}).\n\n"
         f"{COPYRIGHT}. [MIT License](https://opensource.org/licenses/MIT)."

@@ -1,24 +1,22 @@
 """SMTP text/HTML mail with MIME attachments and TLS."""
 
-from __future__ import annotations
-
 import smtplib
 import ssl
+import typing
 from email.message import EmailMessage
 
-from pydantic import BaseModel, Field, SecretStr, model_validator
-
+from yuanboot.compat import BaseModel, Field, SecretStr, model_validator
 from yuanboot.configuration import Configuration
 
 
 class SmtpOptions(BaseModel):
-    host: str = "localhost"
-    port: int = Field(default=587, ge=1, le=65535)
-    username: str = ""
-    password: SecretStr = SecretStr("")
-    starttls: bool = True
-    ssl: bool = False
-    timeout: float = Field(default=10, gt=0)
+    host: "str" = "localhost"
+    port: "int" = Field(default=587, ge=1, le=65535)
+    username: "str" = ""
+    password: "SecretStr" = SecretStr("")
+    starttls: "bool" = True
+    ssl: "bool" = False
+    timeout: "float" = Field(default=10, gt=0)
 
     @model_validator(mode="after")
     def validate_tls(self):
@@ -28,18 +26,18 @@ class SmtpOptions(BaseModel):
 
 
 class SmtpClient:
-    def __init__(self, options: SmtpOptions):
+    def __init__(self, options: "SmtpOptions"):
         self.options = options
 
     def send(
         self,
-        sender: str,
-        recipients: list[str] | str,
-        subject: str,
-        body: str,
+        sender: "str",
+        recipients: "typing.Union[typing.List[str], str]",
+        subject: "str",
+        body: "str",
         *,
         html=False,
-        attachments: dict[str, bytes] | None = None,
+        attachments: "typing.Union[typing.Dict[str, bytes], None]" = None,
     ):
         recipients = recipients.split(";") if isinstance(recipients, str) else recipients
         recipients = [recipient.strip() for recipient in recipients if recipient.strip()]
@@ -64,7 +62,7 @@ class SmtpClient:
 
 
 def add_email(services):
-    def factory(configuration: Configuration):
+    def factory(configuration: "Configuration"):
         return SmtpClient(SmtpOptions.model_validate(configuration.get("yuanboot.email", {})))
 
     services.add_singleton(SmtpClient, factory)

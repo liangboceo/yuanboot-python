@@ -1,25 +1,26 @@
 """Application logging with request correlation, JSON and rotating files."""
 
-from __future__ import annotations
-
 import json
 import logging
 import re
 import sys
 import time
+import typing
 from contextvars import ContextVar
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Literal
 
-from pydantic import BaseModel, Field
+from typing_extensions import Literal
 
+from yuanboot.compat import BaseModel, Field
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import HostedService
 from yuanboot.terminal import ColorMode, colorize, print_banner, use_color
 
-request_id_context: ContextVar[str] = ContextVar("yuanboot_request_id", default="")
+UTC = timezone.utc
+
+request_id_context: "ContextVar[str]" = ContextVar("yuanboot_request_id", default="")
 _PRIVATE = re.compile(r"password|secret|authorization|access.?token|credential", re.IGNORECASE)
 _STANDARD = set(logging.makeLogRecord({}).__dict__) | {
     "message",
@@ -32,14 +33,14 @@ _STANDARD = set(logging.makeLogRecord({}).__dict__) | {
 }
 
 
-def server_log_config() -> dict:
+def server_log_config() -> "dict":
     return json.loads(Path(__file__).with_suffix(".json").read_text(encoding="utf-8"))
 
 
 class TextFormatter(logging.Formatter):
     """Yuanboot zap/logrus console layout, with hundredths of a second."""
 
-    def __init__(self, log_type="zap", color: ColorMode = "auto"):
+    def __init__(self, log_type="zap", color: "ColorMode" = "auto"):
         super().__init__()
         self.log_type = log_type
         self.color = color
@@ -51,9 +52,11 @@ class TextFormatter(logging.Formatter):
         level = {"WARNING": "WARN", "CRITICAL": "FATAL"}.get(record.levelname, record.levelname)
         message = record.getMessage()
         if use_color(self.color):
-            if whole_color := getattr(record, "_yuanboot_color", None):
+            whole_color = getattr(record, "_yuanboot_color", None)
+            value_color = getattr(record, "_yuanboot_value_color", None)
+            if whole_color:
                 message = colorize(message, whole_color, True)
-            elif value_color := getattr(record, "_yuanboot_value_color", None):
+            elif value_color:
                 # Keep the original record clean for file/JSON handlers.
                 if isinstance(record.args, tuple):
                     message = str(record.msg) % tuple(
@@ -65,7 +68,8 @@ class TextFormatter(logging.Formatter):
             caller = f"{Path(record.pathname).parent.name}/{record.filename}:{record.lineno}"
             text = f"[{prefix}] {timestamp}\t{level}\t{caller}\t{message}"
         extra = {key: value for key, value in record.__dict__.items() if key not in _STANDARD}
-        if request_id := getattr(record, "request_id", "") or request_id_context.get():
+        request_id = getattr(record, "request_id", "") or request_id_context.get()
+        if request_id:
             extra["request_id"] = request_id
         if extra:
             text += " " + " ".join(
@@ -90,20 +94,20 @@ def _redact(value):
 
 
 class LoggingOptions(BaseModel):
-    level: str = "INFO"
-    json_format: bool = Field(default=False, alias="json")
-    console: bool = True
-    color: ColorMode = "auto"
-    banner: bool = True
-    file: str | None = None
-    max_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
-    backup_count: int = Field(default=5, ge=0)
-    loggers: dict[str, str] = Field(default_factory=dict)
-    log_type: Literal["zap", "logrus"] = "zap"
+    level: "str" = "INFO"
+    json_format: "bool" = Field(default=False, alias="json")
+    console: "bool" = True
+    color: "ColorMode" = "auto"
+    banner: "bool" = True
+    file: "typing.Union[str, None]" = None
+    max_bytes: "int" = Field(default=10 * 1024 * 1024, ge=1)
+    backup_count: "int" = Field(default=5, ge=0)
+    loggers: "typing.Dict[str, str]" = Field(default_factory=dict)
+    log_type: "Literal['zap', 'logrus']" = "zap"
 
 
 class RequestContextFilter(logging.Filter):
-    def __init__(self, application_name: str):
+    def __init__(self, application_name: "str"):
         super().__init__()
         self.application_name = application_name
 
@@ -132,7 +136,7 @@ class JsonFormatter(logging.Formatter):
 
 
 class LoggingManager:
-    def __init__(self, configuration: Configuration):
+    def __init__(self, configuration: "Configuration"):
         self.options = LoggingOptions.model_validate(configuration.get("yuanboot.logging", {}))
         name = configuration.get_string("app") or configuration.get_string(
             "yuanboot.application.name", "yuanboot"
@@ -141,10 +145,10 @@ class LoggingManager:
         self._old_level, self._old_propagate = self.logger.level, self.logger.propagate
         self._logger_levels = {}
         self._logger_states = {}
-        self._handlers: list[logging.Handler] = []
+        self._handlers: typing.List[logging.Handler] = []
         self._closed = False
         level = self.options.level.upper()
-        if level not in logging.getLevelNamesMapping():
+        if not isinstance(logging.getLevelName(level), int):
             raise ValueError("Invalid logging level")
         try:
             # Route framework, application and server logs through one handler set.
@@ -197,7 +201,7 @@ class LoggingManager:
             self.close()
             raise
 
-    def get_logger(self, name: str = "app") -> logging.Logger:
+    def get_logger(self, name: "str" = "app") -> "logging.Logger":
         return get_logger(name)
 
     def print_banner(self):
@@ -230,17 +234,17 @@ class LoggingManager:
         self._logger_states.clear()
 
 
-def get_logger(name: str = "app") -> logging.Logger:
+def get_logger(name: "str" = "app") -> "logging.Logger":
     return logging.getLogger(name if name.startswith("yuanboot.") else "yuanboot." + name)
 
 
 class LoggingLifecycle(HostedService):
-    def __init__(self, manager: LoggingManager):
+    def __init__(self, manager: "LoggingManager"):
         self.manager = manager
 
 
 def add_logging(services):
-    def logger(manager: LoggingManager) -> logging.Logger:
+    def logger(manager: "LoggingManager") -> "logging.Logger":
         return manager.get_logger()
 
     services.add_singleton(LoggingManager)

@@ -9,7 +9,9 @@ logger = logging.getLogger("yuanboot.configuration")
 
 
 class ConfigurationMonitor(BackgroundService):
-    def __init__(self, configuration: Configuration, life: ApplicationLife, health: HealthRegistry):
+    def __init__(
+        self, configuration: "Configuration", life: "ApplicationLife", health: "HealthRegistry"
+    ):
         super().__init__(life)
         self.configuration = configuration
         health.add("configuration", lambda: configuration.last_refresh_error is None)

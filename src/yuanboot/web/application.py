@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from contextlib import asynccontextmanager
+import typing
 from pathlib import Path
 
 import uvicorn
@@ -10,6 +8,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from yuanboot.branding import AUTHOR, DOCUMENTATION_URL, PROJECT_URL, swagger_description
+from yuanboot.compat import PYDANTIC_V2, asynccontextmanager
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import Host, HostBuilder
 from yuanboot.logging import server_log_config
@@ -18,7 +17,7 @@ from yuanboot.web.mvc import ControllerBuilder
 from yuanboot.web.routing import RouterBuilder
 
 
-def server_address(configuration: Configuration) -> tuple[str, int]:
+def server_address(configuration: "Configuration") -> "typing.Tuple[str, int]":
     address = configuration.get_string("yuanboot.application.server.address")
     host = configuration.get_string("yuanboot.application.server.host", "0.0.0.0")
     port = configuration.get("yuanboot.application.server.port", 8080)
@@ -35,7 +34,7 @@ def server_address(configuration: Configuration) -> tuple[str, int]:
 
 
 class ApplicationBuilder:
-    def __init__(self, app: FastAPI, services, configuration):
+    def __init__(self, app: "FastAPI", services, configuration):
         self.app = app
         self.services = services
         self.configuration = configuration
@@ -53,27 +52,35 @@ class ApplicationBuilder:
         self.app.add_middleware(middleware, **options)
         return self
 
-    def use_cors(self, *, allow_origins: list[str], **options):
+    def use_cors(self, *, allow_origins: "typing.List[str]", **options):
         return self.use_middleware(CORSMiddleware, allow_origins=allow_origins, **options)
 
-    def use_static(self, prefix: str = "/static", directory: str | Path = "static"):
+    def use_static(
+        self, prefix: "str" = "/static", directory: "typing.Union[str, Path]" = "static"
+    ):
         self.app.mount(prefix, StaticFiles(directory=directory), name="static")
         return self
 
-    def use_views(self, directory: str | Path = "templates"):
+    def use_views(self, directory: "typing.Union[str, Path]" = "templates"):
         self.services.add_singleton(Jinja2Templates, instance=Jinja2Templates(directory=directory))
         return self
 
 
 class WebApplication(Host):
-    def __init__(self, app: FastAPI, *args):
+    def __init__(self, app: "FastAPI", *args):
         super().__init__(*args)
         self.app = app
 
     async def __call__(self, scope, receive, send):
         await self.app(scope, receive, send)
 
-    def run(self, *, host: str | None = None, port: int | None = None, **options):
+    def run(
+        self,
+        *,
+        host: "typing.Union[str, None]" = None,
+        port: "typing.Union[int, None]" = None,
+        **options,
+    ):
         options.setdefault("log_config", server_log_config())
         configured_host, configured_port = server_address(self.configuration)
         tls = self.configuration.get_section("yuanboot.application.server.tls")
@@ -93,7 +100,9 @@ class WebApplication(Host):
 
 
 class WebHostBuilder(HostBuilder):
-    def __init__(self, configuration: Configuration | None = None, **fastapi_options):
+    def __init__(
+        self, configuration: "typing.Union[Configuration, None]" = None, **fastapi_options
+    ):
         super().__init__(configuration)
         if "lifespan" in fastapi_options:
             raise ValueError("Use hosted services/lifecycle events to extend the managed lifespan")
@@ -104,7 +113,7 @@ class WebHostBuilder(HostBuilder):
         self._configures.append(configure)
         return self
 
-    def build(self) -> WebApplication:
+    def build(self) -> "WebApplication":
         environment, life = self._prepare()
 
         @asynccontextmanager
@@ -124,7 +133,17 @@ class WebHostBuilder(HostBuilder):
         }
         options.update(self._fastapi_options)
         options["description"] = swagger_description(options.get("description"))
-        app = FastAPI(lifespan=lifespan, **options)
+
+        async def startup():
+            await host.start()
+
+        async def shutdown():
+            await host.stop()
+
+        if PYDANTIC_V2:
+            app = FastAPI(lifespan=lifespan, **options)
+        else:
+            app = FastAPI(on_startup=[startup], on_shutdown=[shutdown], **options)
         builder = ApplicationBuilder(app, self.services, self.configuration)
         for configure in self._configures:
             configure(builder)
@@ -144,7 +163,7 @@ class WebHostBuilder(HostBuilder):
         return host
 
 
-def create_default_builder(configure=None, **options) -> WebHostBuilder:
+def create_default_builder(configure=None, **options) -> "WebHostBuilder":
     builder = WebHostBuilder(**options)
     if configure is not None:
         builder.configure(lambda app: app.use_endpoints(configure))

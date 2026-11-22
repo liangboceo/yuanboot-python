@@ -1,7 +1,5 @@
 """Pooled HTTP clients, optionally resolving service names through discovery."""
 
-from __future__ import annotations
-
 from urllib.parse import urlsplit, urlunsplit
 
 try:
@@ -14,7 +12,9 @@ from yuanboot.dependency_injection import ServiceProvider
 
 
 class HttpClient:
-    def __init__(self, base_url: str = "", *, discovery=None, timeout: float = 10, transport=None):
+    def __init__(
+        self, base_url: "str" = "", *, discovery=None, timeout: "float" = 10, transport=None
+    ):
         self.base_url = base_url.rstrip("/")
         self.discovery = discovery
         if self.base_url:
@@ -25,7 +25,7 @@ class HttpClient:
                 raise ValueError("Base URL must not contain credentials, query or fragment")
         self.client = httpx.Client(timeout=timeout, transport=transport)
 
-    def request(self, method: str, path: str = "", **kwargs):
+    def request(self, method: "str", path: "str" = "", **kwargs):
         if self.base_url and (urlsplit(path).scheme or path.startswith("//")):
             raise ValueError("Use a relative path with a configured base URL")
         url = self.base_url + "/" + path.lstrip("/") if self.base_url else path
@@ -63,7 +63,7 @@ class HttpClientFactory:
         self.timeout = timeout
         self._clients = []
 
-    def create(self, base_url="") -> HttpClient:
+    def create(self, base_url="") -> "HttpClient":
         client = HttpClient(base_url, discovery=self.discovery, timeout=self.timeout)
         self._clients.append(client)
         return client
@@ -75,7 +75,7 @@ class HttpClientFactory:
 
 
 def add_http_client(services):
-    def factory(configuration: Configuration, provider: ServiceProvider):
+    def factory(configuration: "Configuration", provider: "ServiceProvider"):
         discovery = None
         from yuanboot.components.discovery import ServiceDiscovery
 

@@ -1,8 +1,7 @@
 """In-process async broadcast, corresponding to Go pkg/mq/observer (not a broker)."""
 
-from __future__ import annotations
-
 import asyncio
+import typing
 
 _CLOSED = object()
 
@@ -43,7 +42,7 @@ class Observer:
     """Use from a single event loop. Full listeners raise QueueFull; no silent message drops."""
 
     def __init__(self):
-        self._listeners: set[Subscription] = set()
+        self._listeners: typing.Set[Subscription] = set()
         self._closed = False
 
     def subscribe(self, *, capacity=100):

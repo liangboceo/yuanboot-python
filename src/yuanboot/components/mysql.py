@@ -1,6 +1,6 @@
-from __future__ import annotations
+import typing
 
-from pydantic import BaseModel, Field, SecretStr
+from yuanboot.compat import BaseModel, Field, SecretStr
 
 try:
     from sqlalchemy import create_engine, text
@@ -16,24 +16,24 @@ from yuanboot.hosting import HostedService
 
 
 class MySqlOptions(BaseModel):
-    host: str = "127.0.0.1"
-    port: int = Field(default=3306, ge=1, le=65535)
-    database: str = ""
-    username: str = "root"
-    password: SecretStr = SecretStr("")
-    url: SecretStr | None = None
-    charset: str = "utf8mb4"
-    pool_size: int = Field(default=5, ge=1)
-    max_overflow: int = Field(default=10, ge=0)
-    pool_timeout: float = Field(default=30, gt=0)
-    pool_recycle: int = Field(default=1800, ge=-1)
-    connect_timeout: int = Field(default=5, ge=1)
-    read_timeout: int = Field(default=10, ge=1)
-    write_timeout: int = Field(default=10, ge=1)
-    check_on_start: bool = True
+    host: "str" = "127.0.0.1"
+    port: "int" = Field(default=3306, ge=1, le=65535)
+    database: "str" = ""
+    username: "str" = "root"
+    password: "SecretStr" = SecretStr("")
+    url: "typing.Union[SecretStr, None]" = None
+    charset: "str" = "utf8mb4"
+    pool_size: "int" = Field(default=5, ge=1)
+    max_overflow: "int" = Field(default=10, ge=0)
+    pool_timeout: "float" = Field(default=30, gt=0)
+    pool_recycle: "int" = Field(default=1800, ge=-1)
+    connect_timeout: "int" = Field(default=5, ge=1)
+    read_timeout: "int" = Field(default=10, ge=1)
+    write_timeout: "int" = Field(default=10, ge=1)
+    check_on_start: "bool" = True
 
     @classmethod
-    def from_configuration(cls, configuration: Configuration):
+    def from_configuration(cls, configuration: "Configuration"):
         values = configuration.get("yuanboot.datasource.mysql")
         if values is None:
             values = configuration.get("yuanboot.datasource.db", {})
@@ -64,7 +64,7 @@ class MySqlOptions(BaseModel):
 
 
 class MySqlDataSource:
-    def __init__(self, configuration: Configuration):
+    def __init__(self, configuration: "Configuration"):
         self.options = MySqlOptions.from_configuration(configuration)
         options = self.options
         url = (
@@ -105,7 +105,7 @@ class MySqlDataSource:
         """Context manager: commit on success, roll back on exception."""
         return self.engine.begin()
 
-    def ping(self) -> bool:
+    def ping(self) -> "bool":
         try:
             with self.connect() as connection:
                 return connection.execute(text("SELECT 1")).scalar_one() == 1
@@ -117,7 +117,7 @@ class MySqlDataSource:
 
 
 class MySqlLifecycle(HostedService):
-    def __init__(self, source: MySqlDataSource, health: HealthRegistry):
+    def __init__(self, source: "MySqlDataSource", health: "HealthRegistry"):
         self.source = source
         health.add("mysql", source.ping)
 
@@ -127,7 +127,7 @@ class MySqlLifecycle(HostedService):
 
 
 def add_mysql(services):
-    def session(source: MySqlDataSource) -> Session:
+    def session(source: "MySqlDataSource") -> "Session":
         return source.session_factory()
 
     services.add_singleton(MySqlDataSource)

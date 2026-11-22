@@ -9,14 +9,13 @@ ROOT = Path.cwd() if (Path.cwd() / "config.yml").is_file() else Path(__file__).r
 
 
 def create_host():
-    builder = (
-        ConfigurationBuilder(ROOT)
-        .add_yaml_file("config")
-        .add_environment()
-    )
+    builder = ConfigurationBuilder(ROOT).add_yaml_file("config").add_environment()
     bootstrap = builder.build()
-    configuration = (builder.add_nacos().build()
-                     if bootstrap.get_string("yuanboot.cloud.nacos.data_id") else bootstrap)
+    configuration = (
+        builder.add_nacos().build()
+        if bootstrap.get_string("yuanboot.cloud.nacos.data_id")
+        else bootstrap
+    )
     return (
         HostBuilder(configuration)
         .use_components()

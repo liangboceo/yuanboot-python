@@ -26,6 +26,9 @@ def main():
         )
         shutil.copyfile(root / "packaging/cli/README.md", project / "README.md")
         shutil.copyfile(root / "LICENSE", project / "LICENSE")
+        for filename in ("_build_backend/yuanboot_build.py", "setup.py", "MANIFEST.in"):
+            (project / filename).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(root / filename, project / filename)
         subprocess.run(
             [sys.executable, "-m", "build", "--outdir", str(output), str(project)], check=True
         )

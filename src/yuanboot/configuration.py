@@ -1,27 +1,26 @@
 """Layered YAML/JSON, profile, environment and command-line configuration."""
 
-from __future__ import annotations
-
 import argparse
 import copy
 import json
 import os
 import re
 import threading
+import typing
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 import yaml
-from pydantic import BaseModel
 
+from yuanboot.compat import BaseModel, ExceptionGroup, validate_model
 from yuanboot.environment import validate_profile
 
 T = TypeVar("T", bound=BaseModel)
 _PLACEHOLDER = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::([^}]*))?\}")
 
 
-def _merge(target: dict, source: Mapping) -> None:
+def _merge(target: "dict", source: "Mapping") -> "None":
     for key, value in source.items():
         if not isinstance(key, str):
             raise ValueError("Configuration keys must be strings")
@@ -34,7 +33,7 @@ def _merge(target: dict, source: Mapping) -> None:
             target[key] = copy.deepcopy(value)
 
 
-def _set(target: dict, path: str, value: Any) -> None:
+def _set(target: "dict", path: "str", value: "Any") -> "None":
     parts = path.lower().split(".")
     if not all(parts):
         raise ValueError(f"Invalid configuration path: {path}")
@@ -46,7 +45,9 @@ def _set(target: dict, path: str, value: Any) -> None:
 
 
 class Configuration:
-    def __init__(self, values: Mapping | None = None, *, profile: str = "dev") -> None:
+    def __init__(
+        self, values: "typing.Union[Mapping, None]" = None, *, profile: "str" = "dev"
+    ) -> "None":
         self._values: dict = {}
         _merge(self._values, values or {})
         self.profile = validate_profile(profile)
@@ -54,12 +55,12 @@ class Configuration:
         self._reload_factory = None
         self._sources: list = []
         self._callbacks: list = []
-        self.poll_interval: float | None = None
+        self.poll_interval: typing.Union[float, None] = None
         self.version = 0
-        self.last_refresh_error: str | None = None
+        self.last_refresh_error: typing.Union[str, None] = None
         self._closed = False
 
-    def get(self, path: str, default: Any = None) -> Any:
+    def get(self, path: "str", default: "Any" = None) -> "Any":
         value: Any = self._values
         for key in path.lower().split("."):
             if not isinstance(value, dict) or key not in value:
@@ -67,14 +68,14 @@ class Configuration:
             value = value[key]
         return copy.deepcopy(value)
 
-    def get_string(self, path: str, default: str = "") -> str:
+    def get_string(self, path: "str", default: "str" = "") -> "str":
         value = self.get(path, default)
         return default if value is None else str(value)
 
-    def get_int(self, path: str, default: int = 0) -> int:
+    def get_int(self, path: "str", default: "int" = 0) -> "int":
         return int(self.get(path, default))
 
-    def get_bool(self, path: str, default: bool = False) -> bool:
+    def get_bool(self, path: "str", default: "bool" = False) -> "bool":
         value = self.get(path, default)
         if isinstance(value, bool):
             return value
@@ -82,16 +83,16 @@ class Configuration:
             return value.lower() in {"true", "1", "yes"}
         raise ValueError(f"Configuration {path!r} must be boolean")
 
-    def get_section(self, path: str) -> Configuration:
+    def get_section(self, path: "str") -> "Configuration":
         value = self.get(path, {})
         if not isinstance(value, dict):
             raise ValueError(f"Configuration section {path!r} must be a mapping")
         return Configuration(value, profile=self.profile)
 
-    def bind(self, model: type[T], path: str = "") -> T:
-        return model.model_validate(self.get(path) if path else self.to_dict())
+    def bind(self, model: "typing.Type[T]", path: "str" = "") -> "T":
+        return validate_model(model, self.get(path) if path else self.to_dict())
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> "typing.Dict[str, Any]":
         return copy.deepcopy(self._values)
 
     def on_change(self, callback):
@@ -99,7 +100,7 @@ class Configuration:
         self._callbacks.append(callback)
         return self
 
-    def reload(self) -> bool:
+    def reload(self) -> "bool":
         with self._reload_lock:
             if self._closed:
                 raise RuntimeError("Configuration is closed")
@@ -131,60 +132,64 @@ class Configuration:
         if errors:
             raise ExceptionGroup("Configuration source cleanup failed", errors)
 
-    def options(self, model: type[T], path: str = "") -> OptionsSnapshot[T]:
+    def options(self, model: "typing.Type[T]", path: "str" = "") -> "OptionsSnapshot[T]":
         return OptionsSnapshot(self, model, path)
 
 
 class OptionsSnapshot(Generic[T]):
     """Rebind current configuration on access, like Go OptionsSnapshot.CurrentValue."""
 
-    def __init__(self, configuration: Configuration, model: type[T], path: str = ""):
+    def __init__(self, configuration: "Configuration", model: "typing.Type[T]", path: "str" = ""):
         self.configuration, self.model, self.path = configuration, model, path
 
     @property
-    def current_value(self) -> T:
+    def current_value(self) -> "T":
         return self.configuration.bind(self.model, self.path)
 
 
 class ConfigurationBuilder:
     """Sources: defaults < base file < profile file < environment < CLI flags."""
 
-    def __init__(self, directory: str | Path = ".") -> None:
+    def __init__(self, directory: "typing.Union[str, Path]" = ".") -> "None":
         self.directory = Path(directory)
         self._defaults: dict = {}
-        self._files: list[tuple[Path, bool]] = []
-        self._env_prefix: str | None = None
-        self._args: Sequence[str] | None = None
+        self._files: typing.List[typing.Tuple[Path, bool]] = []
+        self._env_prefix: typing.Union[str, None] = None
+        self._args: typing.Union[Sequence[str], None] = None
         self._flags = False
         self._sources: list = []
         self._nacos: list = []
 
-    def add_defaults(self, values: Mapping) -> ConfigurationBuilder:
+    def add_defaults(self, values: "Mapping") -> "ConfigurationBuilder":
         _merge(self._defaults, values)
         return self
 
-    def add_yaml_file(self, name: str = "config", *, optional: bool = False):
+    def add_yaml_file(self, name: "str" = "config", *, optional: "bool" = False):
         self._files.append((Path(name if Path(name).suffix else name + ".yml"), optional))
         return self
 
-    def add_json_file(self, name: str = "config", *, optional: bool = False):
+    def add_json_file(self, name: "str" = "config", *, optional: "bool" = False):
         self._files.append((Path(name if Path(name).suffix else name + ".json"), optional))
         return self
 
-    def add_environment(self, prefix: str = "YUANBOOT_") -> ConfigurationBuilder:
+    def add_environment(self, prefix: "str" = "YUANBOOT_") -> "ConfigurationBuilder":
         self._env_prefix = prefix
         return self
 
-    def add_flag_args(self, args: Sequence[str] | None = None) -> ConfigurationBuilder:
+    def add_flag_args(
+        self, args: "typing.Union[Sequence[str], None]" = None
+    ) -> "ConfigurationBuilder":
         self._flags, self._args = True, args
         return self
 
-    def add_source(self, source) -> ConfigurationBuilder:
+    def add_source(self, source) -> "ConfigurationBuilder":
         """Add a provider implementing load()->Mapping and optionally close()/poll_interval."""
         self._sources.append(source)
         return self
 
-    def add_nacos(self, options=None, *, data_id: str | None = None, optional: bool = False):
+    def add_nacos(
+        self, options=None, *, data_id: "typing.Union[str, None]" = None, optional: "bool" = False
+    ):
         """Options may be omitted to bootstrap from yuanboot.cloud.nacos in local config/env."""
         self._nacos.append((options, data_id, optional))
         return self
@@ -194,7 +199,7 @@ class ConfigurationBuilder:
 
         return self.add_source(ApolloConfigurationSource(options))
 
-    def build(self, profile: str | None = None) -> Configuration:
+    def build(self, profile: "typing.Union[str, None]" = None) -> "Configuration":
         flags: dict = {}
         if self._flags:
             parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
@@ -226,7 +231,7 @@ class ConfigurationBuilder:
                     raise ValueError(f"Configuration {path} must contain a mapping")
                 _merge(values, data or {})
 
-        def interpolate(value: Any) -> Any:
+        def interpolate(value: "Any") -> "Any":
             if isinstance(value, dict):
                 return {key: interpolate(item) for key, item in value.items()}
             if isinstance(value, list):
@@ -234,7 +239,7 @@ class ConfigurationBuilder:
             if not isinstance(value, str):
                 return value
 
-            def replace(match: re.Match) -> str:
+            def replace(match: "re.Match") -> "str":
                 key, default = match.groups()
                 if key not in os.environ and default is None:
                     raise ValueError(f"Missing configuration environment variable: {key}")

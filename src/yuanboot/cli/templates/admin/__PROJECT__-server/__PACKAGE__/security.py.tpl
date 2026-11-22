@@ -71,7 +71,10 @@ class Security:
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", 29)
         except OSError:
-            font = ImageFont.load_default(size=29)
+            try:
+                font = ImageFont.load_default(size=29)
+            except TypeError:
+                font = ImageFont.load_default()
         for i, character in enumerate(code):
             draw.text(
                 (12 + i * 30, secrets.randbelow(8) + 3), character, font=font, fill=(35, 65, 120)

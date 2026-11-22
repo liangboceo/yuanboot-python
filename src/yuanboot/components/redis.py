@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import json
+import typing
 
-from pydantic import BaseModel, Field, SecretStr
+from yuanboot.compat import BaseModel, Field, SecretStr
 
 try:
     import redis
@@ -15,20 +14,20 @@ from yuanboot.hosting import HostedService
 
 
 class RedisOptions(BaseModel):
-    url: SecretStr = SecretStr("redis://127.0.0.1:6379")
-    username: str | None = None
-    password: SecretStr | None = None
-    db: int = Field(default=0, ge=0)
-    prefix: str = "yuanboot:"
-    pool_size: int = Field(default=10, ge=1)
-    dial_timeout: float = Field(default=5, gt=0)
-    read_timeout: float = Field(default=3, gt=0)
-    cluster: bool = False
-    check_on_start: bool = True
+    url: "SecretStr" = SecretStr("redis://127.0.0.1:6379")
+    username: "typing.Union[str, None]" = None
+    password: "typing.Union[SecretStr, None]" = None
+    db: "int" = Field(default=0, ge=0)
+    prefix: "str" = "yuanboot:"
+    pool_size: "int" = Field(default=10, ge=1)
+    dial_timeout: "float" = Field(default=5, gt=0)
+    read_timeout: "float" = Field(default=3, gt=0)
+    cluster: "bool" = False
+    check_on_start: "bool" = True
 
 
 class RedisDataSource:
-    def __init__(self, configuration: Configuration):
+    def __init__(self, configuration: "Configuration"):
         self.options = RedisOptions.model_validate(
             configuration.get("yuanboot.datasource.redis", {})
         )
@@ -53,7 +52,7 @@ class RedisDataSource:
         else:
             self.client = redis.Redis.from_url(url, db=options.db, **kwargs)
 
-    def ping(self) -> bool:
+    def ping(self) -> "bool":
         try:
             return bool(self.client.ping())
         except redis.RedisError:
@@ -64,25 +63,25 @@ class RedisDataSource:
 
 
 class RedisCache:
-    def __init__(self, source: RedisDataSource):
+    def __init__(self, source: "RedisDataSource"):
         self.client = source.client
         self.prefix = source.options.prefix
 
-    def get_json(self, key: str, default=None):
+    def get_json(self, key: "str", default=None):
         value = self.client.get(self.prefix + key)
         return json.loads(value) if value is not None else default
 
-    def set_json(self, key: str, value, *, ttl: int | None = None) -> bool:
+    def set_json(self, key: "str", value, *, ttl: "typing.Union[int, None]" = None) -> "bool":
         if ttl is not None and ttl < 1:
             raise ValueError("Cache TTL must be positive")
         return bool(
             self.client.set(self.prefix + key, json.dumps(value, ensure_ascii=False), ex=ttl)
         )
 
-    def delete(self, key: str) -> bool:
+    def delete(self, key: "str") -> "bool":
         return bool(self.client.delete(self.prefix + key))
 
-    def lock(self, name: str, *, timeout: float = 30, blocking_timeout: float = 5):
+    def lock(self, name: "str", *, timeout: "float" = 30, blocking_timeout: "float" = 5):
         if timeout <= 0 or blocking_timeout < 0:
             raise ValueError("Lock timeout must be positive and blocking_timeout non-negative")
         return self.client.lock(
@@ -91,7 +90,7 @@ class RedisCache:
 
 
 class RedisLifecycle(HostedService):
-    def __init__(self, source: RedisDataSource, health: HealthRegistry):
+    def __init__(self, source: "RedisDataSource", health: "HealthRegistry"):
         self.source = source
         health.add("redis", source.ping)
 

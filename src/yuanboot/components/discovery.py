@@ -1,19 +1,17 @@
 """Common discovery contract and memory/Consul/Eureka/etcd v3 HTTP adapters."""
 
-from __future__ import annotations
-
 import asyncio
 import base64
 import json
 import random
 import threading
 from dataclasses import asdict
-from typing import Protocol
 from urllib.parse import quote
 
 import httpx
-from pydantic import Field, SecretStr
+from typing_extensions import Protocol
 
+from yuanboot.compat import Field, SecretStr, to_thread
 from yuanboot.components.nacos import NacosOptions, ServiceInstance
 from yuanboot.configuration import Configuration
 from yuanboot.dependency_injection import ServiceProvider
@@ -22,18 +20,18 @@ from yuanboot.hosting import ApplicationLife, HostEnvironment
 
 
 class ServiceDiscovery(Protocol):
-    def register(self, instance: ServiceInstance): ...
-    def unregister(self, instance: ServiceInstance): ...
-    def heartbeat(self, instance: ServiceInstance): ...
-    def get_instances(self, service_name: str, *, healthy_only=True): ...
-    def select_instance(self, service_name: str, *, strategy="round-robin"): ...
+    def register(self, instance: "ServiceInstance"): ...
+    def unregister(self, instance: "ServiceInstance"): ...
+    def heartbeat(self, instance: "ServiceInstance"): ...
+    def get_instances(self, service_name: "str", *, healthy_only=True): ...
+    def select_instance(self, service_name: "str", *, strategy="round-robin"): ...
 
 
 class RegistryOptions(NacosOptions):
-    server_addr: str = "http://127.0.0.1:8500"
-    token: SecretStr = SecretStr("")
-    ttl: int = Field(default=15, ge=10)
-    prefix: str = "/yuanboot"
+    server_addr: "str" = "http://127.0.0.1:8500"
+    token: "SecretStr" = SecretStr("")
+    ttl: "int" = Field(default=15, ge=10)
+    prefix: "str" = "/yuanboot"
 
 
 class DiscoveryError(RuntimeError):
@@ -43,7 +41,7 @@ class DiscoveryError(RuntimeError):
 class RegistryClient:
     name = "registry"
 
-    def __init__(self, options: RegistryOptions, *, transport=None):
+    def __init__(self, options: "RegistryOptions", *, transport=None):
         self.options = options
         self.client = httpx.Client(
             base_url=options.server_addr.rstrip("/"),
@@ -81,7 +79,7 @@ class RegistryClient:
             raise ValueError("Watch interval must be positive")
         previous = None
         while True:
-            instances = await asyncio.to_thread(self.get_instances, service_name)
+            instances = await to_thread(self.get_instances, service_name)
             instances.sort(key=lambda item: (item.ip, item.port))
             if instances != previous:
                 previous = instances
@@ -377,7 +375,7 @@ class EtcdClient(RegistryClient):
 def add_service_discovery(services):
     from yuanboot.components.nacos import NacosClient, NacosRegistration
 
-    def factory(configuration: Configuration, provider: ServiceProvider):
+    def factory(configuration: "Configuration", provider: "ServiceProvider"):
         kind = configuration.get_string("yuanboot.cloud.discovery.type", "memory")
         if kind == "nacos":
             return provider.get_service(NacosClient)
@@ -410,11 +408,11 @@ def add_service_discovery(services):
         return adapters[kind](RegistryOptions.model_validate(values))
 
     def registration(
-        client: ServiceDiscovery,
-        configuration: Configuration,
-        environment: HostEnvironment,
-        life: ApplicationLife,
-        health: HealthRegistry,
+        client: "ServiceDiscovery",
+        configuration: "Configuration",
+        environment: "HostEnvironment",
+        life: "ApplicationLife",
+        health: "HealthRegistry",
     ):
         return NacosRegistration(client, configuration, environment, life, health)
 
@@ -422,7 +420,7 @@ def add_service_discovery(services):
     services.add_singleton(ServiceDiscovery, factory)
     if not services.contains(NacosClient):
 
-        def nacos_factory(configuration: Configuration):
+        def nacos_factory(configuration: "Configuration"):
             return NacosClient(NacosOptions.for_discovery(configuration))
 
         services.add_singleton(NacosClient, nacos_factory)

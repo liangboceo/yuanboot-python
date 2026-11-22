@@ -1,13 +1,13 @@
 """Constructor injection with singleton, request scope and transient lifetimes."""
 
-from __future__ import annotations
-
 import inspect
 import threading
+import typing
 from contextvars import ContextVar
 from dataclasses import dataclass
-from enum import StrEnum
-from typing import Annotated, Any, get_args, get_origin, get_type_hints
+from typing import Any
+
+from yuanboot.compat import Annotated, ExceptionGroup, StrEnum, get_args, get_origin, get_type_hints
 
 
 class ServiceResolutionError(RuntimeError):
@@ -21,21 +21,21 @@ class ServiceLifetime(StrEnum):
 
 
 _UNSET = object()
-_RESOLVING: ContextVar[tuple] = ContextVar("yuanboot_resolving", default=())
+_RESOLVING: "ContextVar[tuple]" = ContextVar("yuanboot_resolving", default=())
 
 
 @dataclass(frozen=True)
 class ServiceDescriptor:
-    key: Any
-    factory: Any
-    lifetime: ServiceLifetime
-    instance: Any = _UNSET
+    key: "Any"
+    factory: "Any"
+    lifetime: "ServiceLifetime"
+    instance: "Any" = _UNSET
 
 
 class ServiceCollection:
-    def __init__(self) -> None:
-        self._descriptors: dict[Any, ServiceDescriptor] = {}
-        self.hosted_services: list[type] = []
+    def __init__(self) -> "None":
+        self._descriptors: typing.Dict[Any, ServiceDescriptor] = {}
+        self.hosted_services: typing.List[type] = []
 
     def _add(self, key, implementation, lifetime, instance=_UNSET):
         self._descriptors[key] = ServiceDescriptor(
@@ -52,21 +52,21 @@ class ServiceCollection:
     def add_transient(self, key, implementation=None):
         return self._add(key, implementation, ServiceLifetime.TRANSIENT)
 
-    def add_hosted_service(self, implementation: type):
+    def add_hosted_service(self, implementation: "type"):
         self.add_singleton(implementation)
         if implementation not in self.hosted_services:
             self.hosted_services.append(implementation)
         return self
 
-    def contains(self, key) -> bool:
+    def contains(self, key) -> "bool":
         return key in self._descriptors
 
-    def build(self) -> ServiceProvider:
+    def build(self) -> "ServiceProvider":
         return ServiceProvider(dict(self._descriptors))
 
 
 class ServiceProvider:
-    def __init__(self, descriptors: dict, root: ServiceProvider | None = None):
+    def __init__(self, descriptors: "dict", root: "typing.Union[ServiceProvider, None]" = None):
         self._descriptors = descriptors
         self._root = root or self
         self._cache: dict = {}
@@ -74,7 +74,7 @@ class ServiceProvider:
         self._lock = root._lock if root else threading.RLock()
         self._closed = False
 
-    def create_scope(self) -> ServiceProvider:
+    def create_scope(self) -> "ServiceProvider":
         self._ensure_open()
         return ServiceProvider(self._descriptors, self._root)
 
@@ -153,7 +153,7 @@ class ServiceProvider:
             raise ServiceResolutionError("DI factories must return values, not awaitables")
         return value
 
-    async def aclose(self) -> None:
+    async def aclose(self) -> "None":
         if self._closed:
             return
         self._closed = True

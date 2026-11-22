@@ -1,7 +1,5 @@
 """Apollo HTTP configuration source, managed by the shared configuration monitor."""
 
-from __future__ import annotations
-
 import base64
 import hashlib
 import hmac
@@ -10,23 +8,23 @@ from urllib.parse import quote, urlsplit
 
 import httpx
 import yaml
-from pydantic import BaseModel, Field, SecretStr
 
+from yuanboot.compat import BaseModel, Field, SecretStr
 from yuanboot.configuration import _set
 
 
 class ApolloOptions(BaseModel):
-    endpoint: str = "http://127.0.0.1:8080"
-    appid: str
-    cluster: str = "default"
-    namespace: str = "application"
-    secret: SecretStr = SecretStr("")
-    timeout: float = Field(default=5, gt=0)
-    poll_interval: float = Field(default=5, gt=0)
+    endpoint: "str" = "http://127.0.0.1:8080"
+    appid: "str"
+    cluster: "str" = "default"
+    namespace: "str" = "application"
+    secret: "SecretStr" = SecretStr("")
+    timeout: "float" = Field(default=5, gt=0)
+    poll_interval: "float" = Field(default=5, gt=0)
 
 
 class ApolloConfigurationSource:
-    def __init__(self, options: ApolloOptions, *, transport=None):
+    def __init__(self, options: "ApolloOptions", *, transport=None):
         self.options = options
         self.poll_interval = options.poll_interval
         self.client = httpx.Client(timeout=options.timeout, transport=transport, trust_env=False)

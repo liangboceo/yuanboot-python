@@ -1,10 +1,9 @@
 """Console branding and terminal colors."""
 
-from __future__ import annotations
-
 import os
 import sys
-from typing import Literal
+
+from typing_extensions import Literal
 
 from yuanboot._version import __version__
 
@@ -25,7 +24,7 @@ LOGO = (
 )
 
 
-def use_color(mode: ColorMode = "auto", stream=None) -> bool:
+def use_color(mode: "ColorMode" = "auto", stream=None) -> "bool":
     if mode != "auto":
         return mode == "always"
     if "NO_COLOR" in os.environ:
@@ -36,12 +35,12 @@ def use_color(mode: ColorMode = "auto", stream=None) -> bool:
     return bool(getattr(stream, "isatty", lambda: False)() or os.getenv("PYCHARM_HOSTED"))
 
 
-def colorize(value, color: str, enabled: bool) -> str:
+def colorize(value, color: "str", enabled: "bool") -> "str":
     text = str(value)
     return f"\x1b[{COLORS[color]}m{text}\x1b[0m" if enabled else text
 
 
-def banner(*, cli: bool = False, colors: bool = False) -> str:
+def banner(*, cli: "bool" = False, colors: "bool" = False) -> "str":
     name = "yuanbootctl-python" if cli else "yuanboot"
     description = (
         "Project scaffolding and application tools for yuanboot-python."
@@ -62,7 +61,7 @@ def banner(*, cli: bool = False, colors: bool = False) -> str:
     )
 
 
-def print_banner(*, cli: bool = False, mode: ColorMode = "auto", stream=None) -> None:
+def print_banner(*, cli: "bool" = False, mode: "ColorMode" = "auto", stream=None) -> "None":
     stream = sys.stdout if stream is None else stream
     stream.write(banner(cli=cli, colors=use_color(mode, stream)))
     stream.flush()

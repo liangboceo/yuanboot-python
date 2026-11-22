@@ -1,12 +1,11 @@
 """Shared web/console host, application events and managed background services."""
 
-from __future__ import annotations
-
 import asyncio
 import inspect
 import logging
 import os
 import signal
+import typing
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -16,6 +15,7 @@ from starlette.concurrency import run_in_threadpool
 
 from yuanboot._version import __version__
 from yuanboot.branding import NOTICE
+from yuanboot.compat import ExceptionGroup, create_task, run
 from yuanboot.configuration import Configuration, ConfigurationBuilder
 from yuanboot.dependency_injection import ServiceCollection, ServiceProvider
 from yuanboot.environment import validate_profile
@@ -24,7 +24,7 @@ from yuanboot.health import HealthRegistry
 logger = logging.getLogger("yuanboot")
 
 
-async def invoke(callback: Callable, *args, **kwargs):
+async def invoke(callback: "Callable", *args, **kwargs):
     if inspect.iscoroutinefunction(callback):
         return await callback(*args, **kwargs)
     result = await run_in_threadpool(callback, *args, **kwargs)
@@ -33,79 +33,82 @@ async def invoke(callback: Callable, *args, **kwargs):
 
 @dataclass(frozen=True)
 class HostEnvironment:
-    application_name: str = "yuanboot"
-    profile: str = "dev"
-    pid: int = field(default_factory=os.getpid)
-    version: str = __version__
+    application_name: "str" = "yuanboot"
+    profile: "str" = "dev"
+    pid: "int" = field(default_factory=os.getpid)
+    version: "str" = __version__
 
     def __post_init__(self):
         validate_profile(self.profile)
 
     @property
-    def is_development(self) -> bool:
+    def is_development(self) -> "bool":
         return self.profile == "dev"
 
     @property
-    def is_fat(self) -> bool:
+    def is_fat(self) -> "bool":
         return self.profile == "fat"
 
     @property
-    def is_uat(self) -> bool:
+    def is_uat(self) -> "bool":
         return self.profile == "uat"
 
     @property
-    def is_production(self) -> bool:
+    def is_production(self) -> "bool":
         return self.profile == "pro"
 
 
 @dataclass(frozen=True)
 class ApplicationEvent:
-    topic: str
-    data: Any = None
+    topic: "str"
+    data: "Any" = None
 
 
 class ApplicationLife:
     def __init__(self):
         self.state = "down"
-        self._subscribers: dict[str, list[Callable]] = defaultdict(list)
+        self._subscribers: typing.Dict[str, typing.List[Callable]] = defaultdict(list)
 
-    def subscribe(self, topic: str, callback: Callable) -> ApplicationLife:
+    def subscribe(self, topic: "str", callback: "Callable") -> "ApplicationLife":
         self._subscribers[topic].append(callback)
         return self
 
-    async def publish(self, topic: str, data: Any = None):
+    async def publish(self, topic: "str", data: "Any" = None):
         for callback in tuple(self._subscribers[topic]):
             await invoke(callback, ApplicationEvent(topic, data))
 
 
 class HostedService:
-    async def start(self) -> None:
+    async def start(self) -> "None":
         """Initialize the service. Long-running work belongs in BackgroundService.execute."""
 
-    async def stop(self) -> None:
+    async def stop(self) -> "None":
         """Release resources allocated by start."""
 
 
 class BackgroundService(HostedService):
     """A cancellable task. Override execute; use finally for task-local cleanup."""
 
-    def __init__(self, life: ApplicationLife):
+    def __init__(self, life: "ApplicationLife"):
         self.life = life
-        self._task: asyncio.Task | None = None
+        self._task: typing.Union[asyncio.Task, None] = None
 
-    async def execute(self) -> None:
+    async def execute(self) -> "None":
         raise NotImplementedError
 
-    async def start(self) -> None:
-        self._task = asyncio.create_task(self.execute(), name=type(self).__name__)
+    async def start(self) -> "None":
+        self._task = create_task(self.execute(), name=type(self).__name__)
         self._task.add_done_callback(self._completed)
 
-    def _completed(self, task: asyncio.Task):
-        if not task.cancelled() and (error := task.exception()) is not None:
+    def _completed(self, task: "asyncio.Task"):
+        if task.cancelled():
+            return
+        error = task.exception()
+        if error is not None:
             self.life.state = "failed"
             logger.error("Background service failed: %s", type(self).__name__, exc_info=error)
 
-    async def stop(self) -> None:
+    async def stop(self) -> "None":
         if self._task is not None:
             self._task.cancel()
             try:
@@ -193,9 +196,9 @@ class Host:
         if errors:
             raise ExceptionGroup("Host shutdown failed", errors)
 
-    async def run_async(self, stop_event: asyncio.Event | None = None):
+    async def run_async(self, stop_event: "typing.Union[asyncio.Event, None]" = None):
         event = stop_event or asyncio.Event()
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         signals = []
         if stop_event is None:
             for sig in (signal.SIGINT, signal.SIGTERM):
@@ -215,30 +218,30 @@ class Host:
                     loop.remove_signal_handler(sig)
 
     def run(self):
-        asyncio.run(self.run_async())
+        run(self.run_async())
 
 
 class HostBuilder:
-    def __init__(self, configuration: Configuration | None = None):
+    def __init__(self, configuration: "typing.Union[Configuration, None]" = None):
         self.configuration = (
             configuration
             if configuration is not None
             else (ConfigurationBuilder().add_yaml_file(optional=True).add_environment().build())
         )
         self.services = ServiceCollection()
-        self._service_configures: list[Callable] = []
-        self._life_configures: list[Callable] = []
+        self._service_configures: typing.List[Callable] = []
+        self._life_configures: typing.List[Callable] = []
         self._built = False
 
-    def use_configuration(self, configuration: Configuration):
+    def use_configuration(self, configuration: "Configuration"):
         self.configuration = configuration
         return self
 
-    def set_environment(self, profile: str):
+    def set_environment(self, profile: "str"):
         self.configuration = Configuration(self.configuration.to_dict(), profile=profile)
         return self
 
-    def configure_services(self, configure: Callable[[ServiceCollection], None]):
+    def configure_services(self, configure: "Callable[[ServiceCollection], None]"):
         self._service_configures.append(configure)
         return self
 
@@ -249,7 +252,7 @@ class HostBuilder:
             self.configure(instance.configure)
         return self
 
-    def on_application_life_event(self, configure: Callable[[ApplicationLife], None]):
+    def on_application_life_event(self, configure: "Callable[[ApplicationLife], None]"):
         self._life_configures.append(configure)
         return self
 
@@ -345,7 +348,7 @@ class HostBuilder:
             configure(life)
         return environment, life
 
-    def build(self) -> Host:
+    def build(self) -> "Host":
         environment, life = self._prepare()
         return Host(
             self.services.build(),
@@ -356,5 +359,5 @@ class HostBuilder:
         )
 
 
-def create_default_builder() -> HostBuilder:
+def create_default_builder() -> "HostBuilder":
     return HostBuilder()

@@ -4,6 +4,10 @@
 支持公开 PyPI 和 Git tag 分发；业务项目通过依赖使用框架。
 安装公开包无需 PyPI 账号，上传包需要 Trusted Publisher 或 PyPI API Token。
 
+## 0.3.0
+
+支持 Python 3.6.2–3.14，按解释器自动选择 FastAPI、Pydantic 与组件依赖，统一配置、DI、异步宿主和模型 API。框架、CLI、七类模板及源码构建均已适配；发布流程增加 Python 3.6–3.10 验证。详见 [版本兼容说明](python-compatibility.md)。
+
 ## 0.2.0
 
 新增 `admin` 模板，生成完整 Vue 3 管理前端和 Python API，包含用户、角色、菜单、部门、系统配置、验证码、令牌轮换和数据权限。
@@ -14,8 +18,8 @@
 ## PyPI 安装
 
 ```bash
-python -m pip install 'yuanboot[all]==0.2.0'
-python -m pip install yuanbootctl-python==0.2.0
+python -m pip install 'yuanboot[all]==0.3.0'
+python -m pip install yuanbootctl-python==0.3.0
 yuanbootctl-python --version
 ```
 
@@ -25,13 +29,13 @@ yuanbootctl-python --version
 - `yuanbootctl-python`：工具安装包，依赖精确版本的 `yuanboot`；`[all]` 可启用全部标准组件。
 
 生成项目默认从 PyPI 安装。业务 `pyproject.toml` 中的框架依赖为
-`yuanboot==0.2.0`，组件依赖改为 `yuanboot[all]==0.2.0`；gRPC 基础依赖使用 `yuanboot[grpc]==0.2.0`。
+`yuanboot==0.3.0`，组件依赖改为 `yuanboot[all]==0.3.0`；gRPC 基础依赖使用 `yuanboot[grpc]==0.3.0`。
 
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[all]==0.2.0'
-yuanbootctl-python new mvc -n orders --framework-version 0.2.0
+python -m pip install 'yuanbootctl-python[all]==0.3.0'
+yuanbootctl-python new mvc -n orders --framework-version 0.3.0
 cd orders
 python -m pip install -e '.[dev,components]'
 yuanbootctl-python run
@@ -44,12 +48,12 @@ yuanbootctl-python run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot==0.2.0",
+  "yuanboot==0.3.0",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all]==0.2.0",
+  "yuanboot[all]==0.3.0",
 ]
 ```
 
@@ -57,8 +61,8 @@ components = [
 `grpc` 模板自动启用 `yuanboot[grpc]`。
 默认版本从 `src/yuanboot/_version.py` 自动读取，与生成工具和框架保持一致。
 升级工具后新项目自动使用新版本；已有业务项目保留原固定版本。
-`--framework-version 0.2.0` 可指定 PyPI 版本。
-如需 Git，显式指定 `--framework-ref v0.2.0`，或用 `--framework-repo git@github.com:organisation/framework.git` 覆盖仓库。
+`--framework-version 0.3.0` 可指定 PyPI 版本。
+如需 Git，显式指定 `--framework-ref v0.3.0`，或用 `--framework-repo git@github.com:organisation/framework.git` 覆盖仓库。
 Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装 Git。
 私有仓库通过 SSH agent/部署密钥提供访问权限，不要把 token 写进 URL 或 pyproject。
 
@@ -68,7 +72,7 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 业务项目自己管理版本，与框架版本互不绑定。
 
 - 补丁版本 `v0.1.9`：修复兼容问题。
-- 次版本 `v0.2.0`：新增能力或 0.x 阶段的不兼容变化。
+- 次版本 `v0.3.0`：新增能力或 0.x 阶段的不兼容变化。
 - `v1.0.0` 后按语义化版本管理兼容性。
 
 已发布 tag 保持不可变；修复后新建 tag。业务升级时统一修改 PyPI 版本或 Git tag、重新锁定依赖、运行测试，再部署。
@@ -80,8 +84,8 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 
 1. 将待发布代码推送到 `master`。
 2. 打开仓库 **Actions → Build Release → Run workflow**，选择 `master`。
-3. 填写 `version`（例如 `0.2.0`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
-4. 工作流同步版本源，在 Python 3.11–3.14 上构建包，并为各平台编译独立命令行工具。
+3. 填写 `version`（例如 `0.3.0`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
+4. 工作流同步版本源，在 Python 3.6–3.14 上构建包，并为各平台编译独立命令行工具。
 5. 全部通过后，提交版本变更到 `master`，创建 `v<version>` tag，生成 GitHub Release，上传可执行文件、两个 PyPI 包各自的 wheel / sdist 和 SHA256SUMS。
 6. `draft=false` 的公开发布会自动启动 **Publish PyPI**，将同版本的框架包和工具包上传到正式 PyPI。
 
@@ -89,7 +93,7 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 
 ```bash
 gh workflow run Release.yml --ref master \
-  -f version=0.2.0 -f prerelease=false -f draft=false
+  -f version=0.3.0 -f prerelease=false -f draft=false
 ```
 
 已存在的 tag 会被拒绝，不会覆盖。构建期间如果 `master` 有更新，发布中止，需从最新 `master` 重新运行。
@@ -136,7 +140,7 @@ Token 只保存在 Secret 中，不写入代码、配置或命令参数。
 如果需要重试已发布的版本，手动运行 **Publish PyPI** 并填写相同版本：
 
 ```bash
-gh workflow run PublishPyPI.yml --ref master -f version=0.2.0
+gh workflow run PublishPyPI.yml --ref master -f version=0.3.0
 ```
 
 该工作流下载指定 Release 的四个 Python 包，核对 `SHA256SUMS`、检查包元数据后，
@@ -146,7 +150,7 @@ Release 工作流显式分发 PyPI 任务，因此通过 `GITHUB_TOKEN` 创建�
 两个包全部上传成功后，再通过 PyPI 安装验证。
 
 首次发布后在仓库设置中将默认分支设为 `master`。
-`.github/workflows/ci.yml` 在 master、PR 和 tag 上构建 Python 3.11–3.14 包；构建 wheel/sdist 并保留 Actions 产物。
+`.github/workflows/ci.yml` 在 master、PR 和 tag 上构建 Python 3.6–3.14 包；构建 wheel/sdist 并保留 Actions 产物。
 框架 wheel 包含模板资源，sdist 明确排除本地环境、数据和凭据。
 所有模板默认生成 `README.md` 和 `spec` 文档目录，包含 `yuanboot-python.md`、
 `components.md` 和 `backend-module-development.md`；独立二进制内也包含这些资源。

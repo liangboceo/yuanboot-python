@@ -1,10 +1,19 @@
 """Validated request contracts with the administration UI's camelCase field names."""
 
-from pydantic import BaseModel, ConfigDict, Field
+import typing
+
+
+from yuanboot.compat import BaseModel, ConfigDict, Field, PYDANTIC_V2
 
 
 class RequestModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_max_length=4096)
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="forbid", str_max_length=4096)
+    else:
+
+        class Config:
+            extra = "forbid"
+            max_anystr_length = 4096
 
 
 class Login(RequestModel):
@@ -26,8 +35,8 @@ class ListQuery(RequestModel):
     phone: str = ""
     name: str = ""
     code: str = ""
-    status: str | int | None = ""
-    deptId: str | int | None = ""
+    status: typing.Union[typing.Union[str, int], None] = ""
+    deptId: typing.Union[typing.Union[str, int], None] = ""
 
 
 class SaveUser(RequestModel):
@@ -40,7 +49,7 @@ class SaveUser(RequestModel):
     avatar: str = Field(default="", max_length=3000000)
     deptId: int = Field(default=0, ge=0)
     status: int = Field(default=1, ge=0, le=1)
-    roleIds: list[int] | None = None
+    roleIds: typing.Union[typing.List[int], None] = None
 
 
 class ResetPassword(Identifier):
@@ -62,8 +71,8 @@ class SaveRole(RequestModel):
     dataScope: int = Field(default=1, ge=1, le=5)
     menuCheckStrictly: bool = True
     deptCheckStrictly: bool = True
-    menuIds: list[int] | None = None
-    deptIds: list[int] | None = None
+    menuIds: typing.Union[typing.List[int], None] = None
+    deptIds: typing.Union[typing.List[int], None] = None
 
 
 class RoleMenu(RequestModel):
@@ -72,7 +81,7 @@ class RoleMenu(RequestModel):
 
 class MenuQuery(RequestModel):
     menuName: str = ""
-    status: str | int | None = None
+    status: typing.Union[typing.Union[str, int], None] = None
 
 
 class SaveMenu(RequestModel):
@@ -95,7 +104,7 @@ class SaveMenu(RequestModel):
 
 class DeptQuery(RequestModel):
     deptName: str = ""
-    status: str | int | None = ""
+    status: typing.Union[typing.Union[str, int], None] = ""
 
 
 class SaveDept(RequestModel):

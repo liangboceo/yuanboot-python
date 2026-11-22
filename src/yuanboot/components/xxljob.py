@@ -1,17 +1,16 @@
 """XXL-Job BEAN executor HTTP protocol integrated with the web host."""
 
-from __future__ import annotations
-
 import asyncio
 import hmac
 import logging
+import typing
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
 from fastapi import Request
-from pydantic import AliasChoices, BaseModel, Field, SecretStr
 
+from yuanboot.compat import BaseModel, Field, SecretStr, create_task, to_thread
 from yuanboot.configuration import Configuration
 from yuanboot.hosting import HostedService
 
@@ -19,29 +18,36 @@ logger = logging.getLogger("yuanboot.xxljob")
 
 
 class XxlJobOptions(BaseModel):
-    admin_url: str = Field(default="", validation_alias=AliasChoices("admin_url", "serveraddr"))
-    access_token: SecretStr = Field(
-        default=SecretStr(""), validation_alias=AliasChoices("access_token", "accesstoken")
-    )
-    registry_key: str = Field(
-        default="yuanboot", validation_alias=AliasChoices("registry_key", "registrykey")
-    )
-    executor_url: str = "http://127.0.0.1:8080/xxl-job/"
-    log_dir: Path = Path("logs/xxljob")
-    timeout: float = Field(default=5, gt=0)
-    registry_interval: float = Field(default=20, gt=0, lt=30)
+    admin_url: "str" = ""
+    access_token: "SecretStr" = Field(default=SecretStr(""))
+    registry_key: "str" = Field(default="yuanboot")
+    executor_url: "str" = "http://127.0.0.1:8080/xxl-job/"
+    log_dir: "Path" = Path("logs/xxljob")
+    timeout: "float" = Field(default=5, gt=0)
+
+    def __init__(self, **values):
+        for key, alias in (
+            ("admin_url", "serveraddr"),
+            ("access_token", "accesstoken"),
+            ("registry_key", "registrykey"),
+        ):
+            if key not in values and alias in values:
+                values[key] = values[alias]
+        super().__init__(**values)
+
+    registry_interval: "float" = Field(default=20, gt=0, lt=30)
 
 
 @dataclass
 class JobContext:
-    job_id: int
-    log_id: int
-    parameter: str
-    shard_index: int
-    shard_total: int
-    _path: Path
+    job_id: "int"
+    log_id: "int"
+    parameter: "str"
+    shard_index: "int"
+    shard_total: "int"
+    _path: "Path"
 
-    def report(self, message: str):
+    def report(self, message: "str"):
         with self._path.open("a", encoding="utf-8") as stream:
             stream.write(message + "\n")
 
@@ -49,9 +55,9 @@ class JobContext:
 class XxlJobExecutor(HostedService):
     """BEAN handlers are async callables receiving JobContext; kill cancels cooperatively."""
 
-    def __init__(self, options: XxlJobOptions, handlers: dict, *, transport=None):
+    def __init__(self, options: "XxlJobOptions", handlers: "dict", *, transport=None):
         self.options, self.handlers = options, dict(handlers)
-        self._running: dict[int, asyncio.Task] = {}
+        self._running: typing.Dict[int, asyncio.Task] = {}
         self._finished = set()
         self._registry_task = None
         self._pending_callbacks = []
@@ -91,7 +97,7 @@ class XxlJobExecutor(HostedService):
     async def start(self):
         self.options.log_dir.mkdir(parents=True, exist_ok=True)
         if self.options.admin_url:
-            self._registry_task = asyncio.create_task(self._register())
+            self._registry_task = create_task(self._register())
 
     async def stop(self):
         if self._registry_task:
@@ -164,14 +170,12 @@ class XxlJobExecutor(HostedService):
             if busy:
                 return {"code": 500, "msg": "job is running; retry later"}
             int(payload["logId"])
-            self._running[job_id] = asyncio.create_task(self._execute(payload))
+            self._running[job_id] = create_task(self._execute(payload))
             return ok
         if action == "log":
             log_id, start = int(payload["logId"]), max(1, int(payload.get("fromLineNum", 1)))
             path = self.options.log_dir / f"{log_id}.log"
-            lines = (
-                await asyncio.to_thread(path.read_text, encoding="utf-8") if path.exists() else ""
-            )
+            lines = await to_thread(path.read_text, encoding="utf-8") if path.exists() else ""
             lines = lines.splitlines()
             return {
                 **ok,
@@ -185,14 +189,14 @@ class XxlJobExecutor(HostedService):
         return {"code": 500, "msg": "Unknown action"}
 
 
-def use_xxl_job(builder, handlers: dict, *, prefix="/xxl-job"):
+def use_xxl_job(builder, handlers: "dict", *, prefix="/xxl-job"):
     import inspect
 
     if any(not inspect.iscoroutinefunction(handler) for handler in handlers.values()):
         raise ValueError("XXL-Job handlers must be async callables")
 
     def services(collection):
-        def factory(configuration: Configuration):
+        def factory(configuration: "Configuration"):
             values = configuration.get("yuanboot.application.xxl", {})
             values.setdefault("registry_key", configuration.get_string("yuanboot.application.name"))
             return XxlJobExecutor(XxlJobOptions.model_validate(values), handlers)
@@ -201,7 +205,7 @@ def use_xxl_job(builder, handlers: dict, *, prefix="/xxl-job"):
         collection.add_singleton(XxlJobExecutor, factory)
 
     def configure(app):
-        async def endpoint(action: str, request: Request):
+        async def endpoint(action: "str", request: "Request"):
             executor = request.app.state.services.get_service(XxlJobExecutor)
             expected = executor.options.access_token.get_secret_value()
             actual = request.headers.get("XXL-JOB-ACCESS-TOKEN", "")

@@ -1,6 +1,4 @@
-from typing import Annotated
-
-from pydantic import BaseModel, Field
+from yuanboot.compat import BaseModel, Field
 
 from yuanboot.web import RouterBuilder, inject
 from yuanboot.web.endpoints import use_actuator
@@ -20,6 +18,7 @@ def register_endpoints(router: RouterBuilder):
         return {"info": "ok"}
 
     with router.group("/api", tags=["Greeting"]) as api:
+
         @api.post("/greet")
-        def greet(body: GreetingRequest, service: Annotated[GreetingService, inject(GreetingService)]):
+        def greet(body: GreetingRequest, service: GreetingService = inject(GreetingService)):
             return {"message": service.greet(body.name)}

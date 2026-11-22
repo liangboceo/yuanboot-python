@@ -1,15 +1,16 @@
 """Host-managed interval and second-resolution cron tasks (Go pkg/task)."""
 
-from __future__ import annotations
-
 import asyncio
 import logging
 import math
+import typing
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
+from dateutil.tz import gettz
+
+from yuanboot.compat import create_task
 from yuanboot.hosting import HostedService, invoke
 
 logger = logging.getLogger("yuanboot.scheduler")
@@ -17,13 +18,13 @@ logger = logging.getLogger("yuanboot.scheduler")
 
 @dataclass
 class Job:
-    name: str
-    callback: Callable
-    interval: float | None = None
-    cron: str | None = None
-    timezone: str = "Asia/Shanghai"
-    runs: int = 0
-    failures: int = 0
+    name: "str"
+    callback: "Callable"
+    interval: "typing.Union[float, None]" = None
+    cron: "typing.Union[str, None]" = None
+    timezone: "str" = "Asia/Shanghai"
+    runs: "int" = 0
+    failures: "int" = 0
 
     def delay(self):
         if self.interval is not None:
@@ -32,30 +33,37 @@ class Job:
             from croniter import croniter
         except ImportError as exc:
             raise ImportError('Cron requires: pip install "yuanboot[scheduler]"') from exc
-        now = datetime.now(ZoneInfo(self.timezone))
+        timezone = gettz(self.timezone)
+        if timezone is None:
+            raise ValueError("Unknown timezone: " + self.timezone)
+        now = datetime.now(timezone)
         spec = self.cron
         # Go's five fields are second/minute/hour/day/month; optional sixth is weekday.
         if not spec.startswith("@") and len(spec.split()) == 5:
             spec += " *"
-        return max(
-            0,
-            (
-                croniter(spec, now, second_at_beginning=True).get_next(datetime) - now
-            ).total_seconds(),
-        )
+        if not spec.startswith("@"):
+            fields = spec.split()
+            spec = " ".join(fields[1:] + fields[:1])
+        return max(0, (croniter(spec, now).get_next(datetime) - now).total_seconds())
 
 
 class Scheduler(HostedService):
     """Jobs run serially per name. Multiple processes each execute their own schedule."""
 
     def __init__(self):
-        self.jobs: dict[str, Job] = {}
-        self._tasks: dict[str, asyncio.Task] = {}
-        self._stop: asyncio.Event | None = None
-        self._job_stops: dict[str, asyncio.Event] = {}
+        self.jobs: typing.Dict[str, Job] = {}
+        self._tasks: typing.Dict[str, asyncio.Task] = {}
+        self._stop: typing.Union[asyncio.Event, None] = None
+        self._job_stops: typing.Dict[str, asyncio.Event] = {}
 
     def add(
-        self, name: str, callback: Callable, *, interval=None, cron=None, timezone="Asia/Shanghai"
+        self,
+        name: "str",
+        callback: "Callable",
+        *,
+        interval=None,
+        cron=None,
+        timezone="Asia/Shanghai",
     ):
         if not name or name in self.jobs:
             raise ValueError("Job names must be nonempty and unique")
@@ -68,7 +76,7 @@ class Scheduler(HostedService):
         self.jobs[name] = job
         if self._stop is not None:
             self._job_stops[name] = asyncio.Event()
-            self._tasks[name] = asyncio.create_task(self._run(job, self._job_stops[name]))
+            self._tasks[name] = create_task(self._run(job, self._job_stops[name]))
         return self
 
     async def _run(self, job, stop):
@@ -89,7 +97,7 @@ class Scheduler(HostedService):
         self._stop = asyncio.Event()
         for name, job in self.jobs.items():
             self._job_stops[name] = asyncio.Event()
-            self._tasks[name] = asyncio.create_task(
+            self._tasks[name] = create_task(
                 self._run(job, self._job_stops[name]), name=f"schedule:{name}"
             )
 

@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import asyncio
+import typing
 from collections.abc import Callable
 
 from fastapi import Request
@@ -11,15 +10,19 @@ from yuanboot.health import HealthRegistry
 from yuanboot.hosting import invoke
 
 
-def use_health(router, checks: dict[str, Callable] | None = None, *, timeout: float = 2.0):
+def use_health(
+    router,
+    checks: "typing.Union[typing.Dict[str, Callable], None]" = None,
+    *,
+    timeout: "float" = 2.0,
+):
     checks = dict(checks or {})
 
     @router.get("/actuator/health/detail", tags=["Actuator"])
-    async def health(request: Request):
+    async def health(request: "Request"):
         async def check(name, callback):
             try:
-                async with asyncio.timeout(timeout):
-                    value = await invoke(callback)
+                value = await asyncio.wait_for(invoke(callback), timeout=timeout)
                 return name, {"status": "up" if value else "down"}
             except Exception:
                 return name, {"status": "down"}
@@ -36,7 +39,7 @@ def use_health(router, checks: dict[str, Callable] | None = None, *, timeout: fl
 
 def use_readiness(router):
     @router.get("/actuator/health/readiness", tags=["Actuator"])
-    def readiness(request: Request):
+    def readiness(request: "Request"):
         state = request.app.state.host.life.state
         return JSONResponse({"status": state}, status_code=200 if state == "up" else 503)
 
@@ -49,7 +52,7 @@ def use_liveness(router):
 
 def use_prometheus(router):
     @router.get("/actuator/prometheus", include_in_schema=False)
-    def metrics(request: Request):
+    def metrics(request: "Request"):
         return Response(
             generate_latest(request.app.state.metrics.registry),
             headers={"Content-Type": CONTENT_TYPE_LATEST},

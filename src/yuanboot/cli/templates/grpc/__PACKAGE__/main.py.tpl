@@ -14,10 +14,20 @@ async def hello(request, context):
 
 
 def configure_server(server, services):
-    server.add_generic_rpc_handlers((grpc.method_handlers_generic_handler(
-        "demo.Greeter", {"Hello": grpc.unary_unary_rpc_method_handler(
-            hello, request_deserializer=StringValue.FromString,
-            response_serializer=StringValue.SerializeToString)}),))
+    server.add_generic_rpc_handlers(
+        (
+            grpc.method_handlers_generic_handler(
+                "demo.Greeter",
+                {
+                    "Hello": grpc.unary_unary_rpc_method_handler(
+                        hello,
+                        request_deserializer=StringValue.FromString,
+                        response_serializer=StringValue.SerializeToString,
+                    )
+                },
+            ),
+        )
+    )
 
 
 def create_host():

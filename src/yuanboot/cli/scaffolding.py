@@ -1,22 +1,21 @@
-from __future__ import annotations
-
 import json
 import keyword
 import re
 import secrets
 import shutil
+import typing
 from dataclasses import dataclass
-from importlib.resources import files
 from pathlib import Path
 
 from yuanboot import __version__
+from yuanboot.compat import files
 
 
 @dataclass(frozen=True)
 class ProjectTemplate:
-    name: str
-    description: str
-    layers: tuple[str, ...]
+    name: "str"
+    description: "str"
+    layers: "typing.Tuple[str, ...]"
 
 
 TEMPLATES = {
@@ -57,7 +56,7 @@ def framework_requirement(*, repository=None, ref=None, extras="", version=None)
     repository = repository or FRAMEWORK_REPOSITORY
     if repository.startswith("git@"):
         repository = "ssh://" + repository.replace(":", "/", 1)
-    repository = repository.removeprefix("git+")
+    repository = repository[4:] if repository.startswith("git+") else repository
     if not re.fullmatch(r"(?:ssh|https)://[A-Za-z0-9@._:/-]+", repository):
         raise ValueError("Framework repository must be a Git SSH/HTTPS URL")
     ref = ref or "v" + __version__
@@ -78,14 +77,14 @@ def _walk(resource, prefix=Path()):
 
 
 def create_project(
-    template: str,
-    name: str = "demo",
-    path: str | Path = ".",
+    template: "str",
+    name: "str" = "demo",
+    path: "typing.Union[str, Path]" = ".",
     *,
-    framework_repo: str | None = None,
-    framework_ref: str | None = None,
-    framework_version: str | None = None,
-) -> Path:
+    framework_repo: "typing.Union[str, None]" = None,
+    framework_ref: "typing.Union[str, None]" = None,
+    framework_version: "typing.Union[str, None]" = None,
+) -> "Path":
     if template not in TEMPLATES:
         raise ValueError(f"Unknown template {template!r}. Use 'yuanbootctl-python new --list'.")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", name):

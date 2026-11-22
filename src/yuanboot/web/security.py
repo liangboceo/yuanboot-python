@@ -1,3 +1,5 @@
+import typing
+
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer
 
@@ -7,11 +9,11 @@ class JwtBearer(HTTPBearer):
 
     def __init__(
         self,
-        secret: str,
+        secret: "str",
         *,
-        algorithms: list[str] | None = None,
-        issuer: str | None = None,
-        audience: str | None = None,
+        algorithms: "typing.Union[typing.List[str], None]" = None,
+        issuer: "typing.Union[str, None]" = None,
+        audience: "typing.Union[str, None]" = None,
     ):
         super().__init__(scheme_name="BearerAuth", auto_error=False)
         try:
@@ -28,7 +30,7 @@ class JwtBearer(HTTPBearer):
         self.issuer = issuer
         self.audience = audience
 
-    async def __call__(self, request: Request) -> dict:
+    async def __call__(self, request: "Request") -> "dict":
         credentials = await super().__call__(request)
         if credentials:
             try:

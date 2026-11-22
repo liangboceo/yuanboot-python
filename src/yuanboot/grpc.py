@@ -1,7 +1,5 @@
 """grpc.aio transport sharing configuration, DI and host lifecycle with HTTP/console."""
 
-from __future__ import annotations
-
 import asyncio
 
 try:
@@ -20,9 +18,9 @@ from yuanboot.hosting import HostBuilder, HostedService
 class GrpcServer(HostedService):
     def __init__(
         self,
-        configuration: Configuration,
-        provider: ServiceProvider,
-        health: HealthRegistry,
+        configuration: "Configuration",
+        provider: "ServiceProvider",
+        health: "HealthRegistry",
         configure,
         *,
         interceptors=(),
@@ -87,7 +85,9 @@ class GrpcHostBuilder(HostBuilder):
     def build(self):
         def register(services):
             def factory(
-                configuration: Configuration, provider: ServiceProvider, health: HealthRegistry
+                configuration: "Configuration",
+                provider: "ServiceProvider",
+                health: "HealthRegistry",
             ):
                 return GrpcServer(
                     configuration,
@@ -112,7 +112,7 @@ class GrpcClientFactory:
         self.discovery = discovery
         self._channels = {}
 
-    def create(self, target: str, *, credentials=None):
+    def create(self, target: "str", *, credentials=None):
         if target.startswith("lb://"):
             if self.discovery is None:
                 raise RuntimeError("lb:// requires a discovery client")

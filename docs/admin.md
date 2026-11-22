@@ -5,7 +5,7 @@
 ## 创建项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.2.0'
+python -m pip install 'yuanbootctl-python[admin]==0.3.0'
 yuanbootctl-python new admin -n my-admin
 cd my-admin
 ```
@@ -15,7 +15,7 @@ cd my-admin
 
 ## 启动
 
-后端（Python 3.11+）：
+后端（Python 3.6.2+）：
 
 ```bash
 cd my-admin-server

@@ -16,4 +16,6 @@ class Startup:
     def configure(self, app: ApplicationBuilder):
         app.use_endpoints(use_actuator)
         app.use_views(ROOT / "templates")
-        app.use_mvc(lambda mvc: mvc.add_controller(GreetingController).add_controller(HomeController))
+        app.use_mvc(
+            lambda mvc: mvc.add_controller(GreetingController).add_controller(HomeController)
+        )

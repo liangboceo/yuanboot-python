@@ -1,18 +1,17 @@
-from __future__ import annotations
-
 import argparse
 import importlib.util
 import os
 import signal
 import subprocess
 import sys
-import tomllib
+import typing
 from contextlib import contextmanager
 from pathlib import Path
 
 from yuanboot import __version__
 from yuanboot import logging as framework_logging
 from yuanboot.cli.scaffolding import TEMPLATES, create_project
+from yuanboot.compat import load_toml
 from yuanboot.configuration import ConfigurationBuilder
 from yuanboot.environment import PROFILES
 from yuanboot.terminal import print_banner
@@ -52,7 +51,8 @@ def _parser():
         prog="yuanbootctl-python", description="yuanboot Python project tools"
     )
     parser.add_argument("--version", action="version", version=f"yuanbootctl-python {__version__}")
-    commands = parser.add_subparsers(dest="command", required=True)
+    commands = parser.add_subparsers(dest="command")
+    commands.required = True
     new = commands.add_parser("new", help="Create an application from a template")
     new.add_argument("template", nargs="?")
     new.add_argument("-l", "--list", "--templates", action="store_true", dest="list_templates")
@@ -82,7 +82,7 @@ def _parser():
 def _run(args):
     project = Path(args.path).expanduser().resolve()
     with (project / "pyproject.toml").open("rb") as stream:
-        settings = tomllib.load(stream).get("tool", {}).get("yuanboot", {})
+        settings = load_toml(stream).get("tool", {}).get("yuanboot", {})
     if not settings:
         raise ValueError("Missing [tool.yuanboot] configuration in pyproject.toml")
     env = os.environ.copy()
@@ -205,7 +205,7 @@ def _run_embedded(arguments, project, env):
         os.environ.update(previous_environment)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: "typing.Union[typing.List[str], None]" = None) -> "int":
     parser = _parser()
     args = parser.parse_args(argv)
     try:

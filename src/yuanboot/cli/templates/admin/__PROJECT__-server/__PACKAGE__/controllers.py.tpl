@@ -12,6 +12,8 @@ from PIL import Image, UnidentifiedImageError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from yuanboot.compat import required_fields
+
 from . import schemas as dto
 from .models import SysDept, SysMenu, SysRole, SysRoleDept, SysRoleMenu, SystemConfig, SysUser, now
 from .security import Security, hash_password, strong_password, verify_password
@@ -49,9 +51,7 @@ def actor(request, service, session, security):
 def register(paths, schema, permission, callback, *, public=False, methods=None):
     methods = methods or ["POST"]
 
-    body_default = (
-        ... if any(field.is_required() for field in schema.model_fields.values()) else None
-    )
+    body_default = ... if required_fields(schema) else None
 
     def endpoint(
         request: Request, payload: schema = Body(default=body_default), credentials=Depends(bearer)
@@ -168,7 +168,8 @@ def change_password(request, data, service, session, security, user, claims):
 def role_list(request, data, service, session, security, user, claims):
     query = select(SysRole).where(SysRole.is_deleted == 0)
     for key in ("name", "code"):
-        if value := getattr(data, key):
+        value = getattr(data, key)
+        if value:
             query = query.where(getattr(SysRole, key).contains(value, autoescape=True))
     if data.status not in (None, ""):
         query = query.where(SysRole.status == int(data.status))

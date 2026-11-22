@@ -330,7 +330,8 @@ class SystemService:
         if scope is not None:
             statement = statement.where(scope)
         for field in ("username", "nickname", "phone"):
-            if value := getattr(query, field):
+            value = getattr(query, field)
+            if value:
                 statement = statement.where(
                     getattr(SysUser, field).contains(value, autoescape=True)
                 )

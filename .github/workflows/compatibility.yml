@@ -1,0 +1,58 @@
+name: Python compatibility
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  legacy:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    container: python:${{ matrix.python }}-slim
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.6', '3.7', '3.8', '3.9', '3.10']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set release version
+        if: inputs.version != ''
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python packaging/prepare_release.py "$RELEASE_VERSION"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install '.[all,dev]' requests
+      - run: python -m yuanboot.cli --version && python -m yuanboot.cli new --list
+      - name: Check imports, project generation and managed HTTP lifecycle
+        run: |
+          python - <<'PY'
+          import importlib
+          import os
+          import pkgutil
+          import tempfile
+          import yuanboot
+          from fastapi.testclient import TestClient
+          from yuanboot.cli.scaffolding import TEMPLATES, create_project
+          from yuanboot.web import create_default_builder
+          from yuanboot.web.endpoints import use_actuator
+          os.environ['YUANBOOT_YUANBOOT__LOGGING__CONSOLE'] = 'false'
+          for module in pkgutil.walk_packages(yuanboot.__path__, yuanboot.__name__ + '.'):
+              if not module.name.endswith(('__main__', '.entrypoint')):
+                  importlib.import_module(module.name)
+          for template in TEMPLATES:
+              create_project(template, 'example_' + template, tempfile.mkdtemp())
+          host = create_default_builder(use_actuator).build()
+          with TestClient(host.app) as client:
+              assert client.get('/actuator/health/detail').status_code == 200
+              assert client.get('/openapi.json').status_code == 200
+          assert host.life.state == 'down'
+          PY
+      - run: python packaging/build_packages.py
+      - run: python -m twine check dist/*

@@ -1,7 +1,5 @@
 """Nacos 1.x/2.x HTTP OpenAPI configuration and ephemeral service discovery."""
 
-from __future__ import annotations
-
 import asyncio
 import json
 import logging
@@ -9,12 +7,14 @@ import random
 import socket
 import threading
 import time
+import typing
 from dataclasses import dataclass, field
 from datetime import datetime
 from urllib.parse import urlsplit
 
 import yaml
-from pydantic import BaseModel, Field, SecretStr, model_validator
+
+from yuanboot.compat import BaseModel, Field, SecretStr, model_validator, to_thread
 
 try:
     import httpx
@@ -30,7 +30,7 @@ logger = logging.getLogger("yuanboot.nacos")
 
 
 class NacosError(RuntimeError):
-    def __init__(self, operation: str, status_code: int | None = None):
+    def __init__(self, operation: "str", status_code: "typing.Union[int, None]" = None):
         self.status_code = status_code
         super().__init__(
             f"Nacos {operation} failed" + (f" (HTTP {status_code})" if status_code else "")
@@ -38,17 +38,17 @@ class NacosError(RuntimeError):
 
 
 class NacosOptions(BaseModel):
-    server_addr: str = "http://127.0.0.1:8848"
-    context_path: str = "/nacos"
-    namespace: str = ""
-    group: str = "DEFAULT_GROUP"
-    cluster: str = "DEFAULT"
-    username: str = ""
-    password: SecretStr = SecretStr("")
-    timeout: float = Field(default=5, gt=0)
-    data_id: str = ""
-    format: str = "yaml"
-    poll_interval: float = Field(default=5, gt=0)
+    server_addr: "str" = "http://127.0.0.1:8848"
+    context_path: "str" = "/nacos"
+    namespace: "str" = ""
+    group: "str" = "DEFAULT_GROUP"
+    cluster: "str" = "DEFAULT"
+    username: "str" = ""
+    password: "SecretStr" = SecretStr("")
+    timeout: "float" = Field(default=5, gt=0)
+    data_id: "str" = ""
+    format: "str" = "yaml"
+    poll_interval: "float" = Field(default=5, gt=0)
 
     @model_validator(mode="after")
     def normalize(self):
@@ -61,7 +61,7 @@ class NacosOptions(BaseModel):
         return self
 
     @classmethod
-    def from_configuration(cls, configuration: Configuration, section: str = ""):
+    def from_configuration(cls, configuration: "Configuration", section: "str" = ""):
         values = (
             configuration.get(section)
             if section
@@ -89,7 +89,7 @@ class NacosOptions(BaseModel):
         return cls.model_validate(values)
 
     @classmethod
-    def for_discovery(cls, configuration: Configuration):
+    def for_discovery(cls, configuration: "Configuration"):
         values = {
             **configuration.get("yuanboot.cloud.nacos", {}),
             **configuration.get("yuanboot.cloud.discovery.metadata", {}),
@@ -102,22 +102,22 @@ class NacosOptions(BaseModel):
 
 @dataclass(frozen=True)
 class ServiceInstance:
-    service_name: str
-    ip: str
-    port: int
-    group: str = "DEFAULT_GROUP"
-    cluster: str = "DEFAULT"
-    weight: float = 10.0
-    healthy: bool = True
-    enabled: bool = True
-    ephemeral: bool = True
-    metadata: dict[str, str] = field(default_factory=dict)
+    service_name: "str"
+    ip: "str"
+    port: "int"
+    group: "str" = "DEFAULT_GROUP"
+    cluster: "str" = "DEFAULT"
+    weight: "float" = 10.0
+    healthy: "bool" = True
+    enabled: "bool" = True
+    ephemeral: "bool" = True
+    metadata: "typing.Dict[str, str]" = field(default_factory=dict)
 
 
 class NacosClient:
     name = "nacos"
 
-    def __init__(self, options: NacosOptions, *, transport=None):
+    def __init__(self, options: "NacosOptions", *, transport=None):
         self.options = options
         self._servers = []
         for address in options.server_addr.split(";"):
@@ -198,7 +198,7 @@ class NacosClient:
             return response
         raise NacosError(path)
 
-    def get_config(self, data_id: str, *, group: str | None = None) -> str:
+    def get_config(self, data_id: "str", *, group: "typing.Union[str, None]" = None) -> "str":
         return self._request(
             "GET",
             "/v1/cs/configs",
@@ -210,8 +210,13 @@ class NacosClient:
         ).text
 
     def publish_config(
-        self, data_id: str, content: str, *, group: str | None = None, format: str = "yaml"
-    ) -> bool:
+        self,
+        data_id: "str",
+        content: "str",
+        *,
+        group: "typing.Union[str, None]" = None,
+        format: "str" = "yaml",
+    ) -> "bool":
         return (
             self._request(
                 "POST",
@@ -229,7 +234,7 @@ class NacosClient:
             == "true"
         )
 
-    def delete_config(self, data_id: str, *, group: str | None = None) -> bool:
+    def delete_config(self, data_id: "str", *, group: "typing.Union[str, None]" = None) -> "bool":
         return (
             self._request(
                 "DELETE",
@@ -245,7 +250,7 @@ class NacosClient:
             == "true"
         )
 
-    def _instance_params(self, instance: ServiceInstance):
+    def _instance_params(self, instance: "ServiceInstance"):
         return {
             "namespaceId": self.options.namespace,
             "serviceName": instance.service_name,
@@ -256,7 +261,7 @@ class NacosClient:
             "ephemeral": str(instance.ephemeral).lower(),
         }
 
-    def register(self, instance: ServiceInstance):
+    def register(self, instance: "ServiceInstance"):
         params = self._instance_params(instance)
         params.update(
             weight=instance.weight,
@@ -268,10 +273,10 @@ class NacosClient:
         if response.text.strip().lower() != "ok":
             raise NacosError("register response")
 
-    def unregister(self, instance: ServiceInstance):
+    def unregister(self, instance: "ServiceInstance"):
         self._request("DELETE", "/v1/ns/instance", params=self._instance_params(instance))
 
-    def get_services(self, *, page: int = 1, page_size: int = 100) -> list[str]:
+    def get_services(self, *, page: "int" = 1, page_size: "int" = 100) -> "typing.List[str]":
         if page < 1 or not 1 <= page_size <= 1000:
             raise ValueError("Invalid Nacos service pagination")
         return (
@@ -289,7 +294,7 @@ class NacosClient:
             .get("doms", [])
         )
 
-    def delete_service(self, service_name: str):
+    def delete_service(self, service_name: "str"):
         """Delete an empty service definition. Instances must be deregistered first."""
         self._request(
             "DELETE",
@@ -301,7 +306,7 @@ class NacosClient:
             },
         )
 
-    def heartbeat(self, instance: ServiceInstance):
+    def heartbeat(self, instance: "ServiceInstance"):
         params = self._instance_params(instance)
         params["beat"] = json.dumps(
             {
@@ -322,8 +327,12 @@ class NacosClient:
         return payload
 
     def get_instances(
-        self, service_name: str, *, healthy_only: bool = True, group: str | None = None
-    ) -> list[ServiceInstance]:
+        self,
+        service_name: "str",
+        *,
+        healthy_only: "bool" = True,
+        group: "typing.Union[str, None]" = None,
+    ) -> "typing.List[ServiceInstance]":
         group = group or self.options.group
         response = self._request(
             "GET",
@@ -354,7 +363,7 @@ class NacosClient:
             or (host.get("healthy") and host.get("enabled", True) and host.get("weight", 1) > 0)
         ]
 
-    def select_instance(self, service_name: str, *, strategy: str = "round-robin"):
+    def select_instance(self, service_name: "str", *, strategy: "str" = "round-robin"):
         instances = self.get_instances(service_name)
         if not instances:
             raise LookupError(f"No healthy instances for {service_name}")
@@ -367,19 +376,19 @@ class NacosClient:
             self._selection += 1
             return instance
 
-    async def watch_instances(self, service_name: str, *, interval: float = 5):
+    async def watch_instances(self, service_name: "str", *, interval: "float" = 5):
         if interval <= 0:
             raise ValueError("Watch interval must be positive")
         previous = None
         while True:
-            instances = await asyncio.to_thread(self.get_instances, service_name)
+            instances = await to_thread(self.get_instances, service_name)
             snapshot = sorted(instances, key=lambda item: (item.ip, item.port))
             if snapshot != previous:
                 previous = snapshot
                 yield snapshot
             await asyncio.sleep(interval)
 
-    def ping(self) -> bool:
+    def ping(self) -> "bool":
         try:
             response = self._request("GET", "/v1/console/health/readiness")
             return response.status_code == 200
@@ -391,7 +400,7 @@ class NacosClient:
 
 
 class NacosConfigurationSource:
-    def __init__(self, options: NacosOptions, *, optional: bool = False, client=None):
+    def __init__(self, options: "NacosOptions", *, optional: "bool" = False, client=None):
         if not options.data_id:
             raise ValueError("Nacos configuration requires data_id")
         self.options = options
@@ -400,7 +409,7 @@ class NacosConfigurationSource:
         self._owns_client = client is None
         self.poll_interval = options.poll_interval
 
-    def load(self) -> dict:
+    def load(self) -> "dict":
         try:
             content = self.client.get_config(self.options.data_id)
         except NacosError as exc:
@@ -422,11 +431,11 @@ class NacosConfigurationSource:
 class NacosRegistration(BackgroundService):
     def __init__(
         self,
-        client: NacosClient,
-        configuration: Configuration,
-        environment: HostEnvironment,
-        life: ApplicationLife,
-        health: HealthRegistry,
+        client: "NacosClient",
+        configuration: "Configuration",
+        environment: "HostEnvironment",
+        life: "ApplicationLife",
+        health: "HealthRegistry",
     ):
         super().__init__(life)
         from yuanboot.web.application import server_address
@@ -510,7 +519,7 @@ class NacosRegistration(BackgroundService):
 
 
 def add_nacos_discovery(services):
-    def client(configuration: Configuration) -> NacosClient:
+    def client(configuration: "Configuration") -> "NacosClient":
         return NacosClient(NacosOptions.for_discovery(configuration))
 
     services.add_singleton(NacosClient, client)

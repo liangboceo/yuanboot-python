@@ -1,3 +1,4 @@
+import typing
 from collections.abc import Callable
 
 
@@ -5,10 +6,10 @@ class HealthRegistry:
     """Named component checks shared by the host and actuator endpoints."""
 
     def __init__(self):
-        self._checks: dict[str, Callable] = {}
+        self._checks: typing.Dict[str, Callable] = {}
 
-    def add(self, name: str, check: Callable):
+    def add(self, name: "str", check: "Callable"):
         self._checks[name] = check
 
-    def checks(self) -> dict[str, Callable]:
+    def checks(self) -> "typing.Dict[str, Callable]":
         return dict(self._checks)

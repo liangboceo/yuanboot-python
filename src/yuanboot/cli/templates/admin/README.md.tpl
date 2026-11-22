@@ -4,7 +4,7 @@
 
 ## 启动
 
-后端（Python 3.11+）：
+后端（Python 3.6.2+）：
 
 ```bash
 cd __PROJECT__-server

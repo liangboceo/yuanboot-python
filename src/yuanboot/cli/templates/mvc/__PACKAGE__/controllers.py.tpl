@@ -1,9 +1,10 @@
 from fastapi import Request
-from pydantic import BaseModel, Field
+from yuanboot.compat import BaseModel, Field
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
 from yuanboot import Configuration
+from yuanboot.compat import template_response
 from yuanboot.web import ApiController, ApiResult, controller, route
 
 
@@ -36,6 +37,4 @@ class HomeController:
 
     @route("/", response_class=HTMLResponse)
     def index(self, request: Request):
-        return self.templates.TemplateResponse(
-            request=request, name="index.html", context={"title": "__PROJECT__"}
-        )
+        return template_response(self.templates, request, "index.html", {"title": "__PROJECT__"})

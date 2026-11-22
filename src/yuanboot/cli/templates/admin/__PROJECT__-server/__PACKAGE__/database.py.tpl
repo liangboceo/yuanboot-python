@@ -24,7 +24,7 @@ class Database:
             url = configuration.get_string("admin.database_url", "sqlite:///./data/admin.db")
             if not url.startswith("sqlite:///"):
                 raise ValueError("Configure MySQL through yuanboot.datasource.mysql")
-            filename = url.removeprefix("sqlite:///")
+            filename = url[len("sqlite:///") :]
             if not Path(filename).is_absolute() and filename != ":memory:":
                 filename = str(Path(__file__).resolve().parents[1] / filename)
                 url = "sqlite:///" + filename

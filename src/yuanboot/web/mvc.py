@@ -1,31 +1,55 @@
 """Controller routes preserve FastAPI's parameter binding and OpenAPI signatures."""
 
-from __future__ import annotations
-
 import inspect
+import re
+import sys
+import typing
 from functools import wraps
-from typing import Generic, TypeVar, get_type_hints
+from typing import Generic, TypeVar
 
 from fastapi import Depends, Request
-from pydantic import BaseModel
+from pydantic import create_model
 
+from yuanboot.compat import BaseModel, GenericModel, get_type_hints
 from yuanboot.hosting import invoke
 
 T = TypeVar("T")
 
 
-class ApiResult(BaseModel, Generic[T]):
-    success: bool = True
-    message: str = "ok"
-    data: T | None = None
+if sys.version_info < (3, 7):
+    _result_models = {}
+
+    class _ResultMeta(type(BaseModel)):
+        def __getitem__(cls, data_type):
+            key = (cls, data_type)
+            if key not in _result_models:
+                label = re.sub(r"\W", "_", getattr(data_type, "__name__", str(data_type)))
+                _result_models[key] = create_model(
+                    cls.__name__ + label,
+                    __base__=cls,
+                    __module__=cls.__module__,
+                    data=(typing.Optional[data_type], None),
+                )
+            return _result_models[key]
+
+    class ApiResult(BaseModel, metaclass=_ResultMeta):
+        success: bool = True
+        message: str = "ok"
+        data: typing.Any = None
+else:
+
+    class ApiResult(GenericModel, Generic[T]):
+        success: bool = True
+        message: str = "ok"
+        data: typing.Optional[T] = None
 
 
 class ApiController:
-    def ok(self, data=None, message: str = "ok") -> ApiResult:
+    def ok(self, data=None, message: "str" = "ok") -> "ApiResult":
         return ApiResult(data=data, message=message)
 
 
-def controller(prefix: str = "", *, tags: list[str] | None = None):
+def controller(prefix: "str" = "", *, tags: "typing.Union[typing.List[str], None]" = None):
     def decorate(cls):
         cls.__yuanboot_controller__ = {"prefix": prefix, "tags": tags}
         return cls
@@ -33,7 +57,7 @@ def controller(prefix: str = "", *, tags: list[str] | None = None):
     return decorate
 
 
-def route(path: str, *, methods: list[str] | None = None, **options):
+def route(path: "str", *, methods: "typing.Union[typing.List[str], None]" = None, **options):
     def decorate(method):
         routes = list(getattr(method, "__yuanboot_routes__", []))
         routes.append((path, methods or ["GET"], options))
@@ -44,7 +68,7 @@ def route(path: str, *, methods: list[str] | None = None, **options):
 
 
 def _endpoint(controller_type, method):
-    def resolve_controller(request: Request):
+    def resolve_controller(request: "Request"):
         return request.state.services.get_service(controller_type)
 
     @wraps(method)
