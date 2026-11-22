@@ -61,6 +61,7 @@ jobs:
         run: |
           import json, os, socket, subprocess, sys, tempfile, time, urllib.request
           from pathlib import Path
+          sys.stdout.reconfigure(encoding='utf-8')
           exe = str(Path('dist/bin/yuanbootctl-python.exe').resolve())
           root = Path(tempfile.mkdtemp(prefix='yuanboot-admin-'))
           subprocess.check_call([exe, 'new', 'admin', '-n', 'demo', '-p', str(root)])
@@ -78,7 +79,7 @@ jobs:
                       deadline = time.monotonic() + 300
                       while time.monotonic() < deadline:
                           if process.poll() is not None:
-                              raise AssertionError(logfile.read_text(errors='replace'))
+                              raise AssertionError(logfile.read_text(encoding='utf-8', errors='replace'))
                           try:
                               url = 'http://127.0.0.1:' + str(port)
                               with urllib.request.urlopen(url + '/actuator/health/detail', timeout=2) as r:
@@ -96,7 +97,7 @@ jobs:
                       if process.poll() is None:
                           subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], check=True)
                       process.wait(timeout=30)
-                      print(logfile.read_text(errors='replace'))
+                      print(logfile.read_text(encoding='utf-8', errors='replace'))
               assert not list(backend.glob('*.egg-info'))
               assert not (backend / 'build').exists()
               assert not (backend / 'dist').exists()
