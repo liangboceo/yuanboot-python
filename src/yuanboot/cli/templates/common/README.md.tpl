@@ -20,7 +20,7 @@ yuanboot-python 作者：jackson liang。Copyright (c) 2026 jackson liang。
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements.txt
 yuanbootctl-python run
 ```
 
@@ -38,7 +38,7 @@ python -m __PACKAGE__.main
 模板附带 `.run/yuanboot.run.xml`，打开项目后可选择 `yuanboot (__PROJECT__)` 调试配置。
 手动配置 PyCharm 时，选择 **Module name**，填写 `__PACKAGE__.main`，
 Working directory 设置为项目根目录，解释器选择项目 `.venv/bin/python`。
-包内 `__PACKAGE__/main.py` 使用绝对导入；安装业务项目后也支持直接运行该文件。
+包内 `__PACKAGE__/main.py` 使用绝对导入；推荐从项目根目录通过模块入口运行。
 配置优先从当前目录读取 `config.yml`，当前目录没有配置时回退到项目根目录。
 
 框架默认通过 `pyproject.toml` 从公开 PyPI 安装，依赖版本与生成工具的框架版本一致。
@@ -48,14 +48,14 @@ Working directory 设置为项目根目录，解释器选择项目 `.venv/bin/py
 显式使用 `--framework-ref` 或 `--framework-repo` 时切换到 Git 依赖，安装环境需提供 Git。
 项目版本和框架版本各自维护。
 本地联调先安装完整框架 `pip install -e '/path/to/yuanboot_python[all]'`，
-再用 `pip install --no-deps -e .` 安装业务代码。
+业务代码直接从项目目录运行，无需安装业务包。
 
 也可用独立二进制直接运行默认模板：`/path/to/yuanbootctl-python run`。
 项目引入额外依赖后，使用 `run --python /path/to/.venv/bin/python` 指定业务环境。
 
 ## 组件与构建
 
-启用全部基础组件：`python -m pip install -e '.[dev,components]'`。
+启用全部基础组件：`python -m pip install __YUANBOOT_COMPONENTS_REQUIREMENT__`。
 `main.py` 的 `use_components()` 自动读取 MySQL、Redis、Nacos 注册、日志等配置。
 配置 `yuanboot.cloud.nacos.data_id` 后，Web/Console 模板会加载 Nacos 配置并监视更新。
 
@@ -86,7 +86,7 @@ yuanbootctl-python run
 yuanbootctl-python build
 ```
 
-`install` 自动管理项目 `.venv`，安装运行和开发依赖；`run` 缺少依赖时先安装，
+`install` 自动管理项目 `.venv`，仅安装运行依赖；`run` 缺少运行依赖时先安装，
 `build` 自动补齐依赖与构建工具。依赖完整时复用已有环境。
 `install --python /path/to/python` 可选择虚拟环境解释器，`--index-url` 可指定包索引。
 

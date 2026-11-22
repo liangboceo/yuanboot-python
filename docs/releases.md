@@ -4,6 +4,13 @@
 支持公开 PyPI 和 Git tag 分发；业务项目通过依赖使用框架。
 安装公开包无需 PyPI 账号，上传包需要 Trusted Publisher 或 PyPI API Token。
 
+## 0.3.2
+
+`install` / `run` 仅安装运行依赖，不再 editable 安装业务包，不生成业务 egg-info，也不安装 build。
+仅 `build` 准备构建工具并打包。requirements.txt 支持直接 pip 安装，CLI 同步 pyproject.toml 运行依赖并迁移旧模板的自身 editable 引用。
+Windows Python 3.6 / 3.7 使用兼容的 cryptography 版本；独立 exe 隔离外部 Python 的 DLL 与模块搜索路径。
+Windows 发布校验新增 Admin 内置运行时和外部 Python 3.7 的实际启动、验证码、运行依赖安装与独立构建验证。
+
 ## 0.3.1
 
 Admin 根目录可直接执行 `install`、`run`、`build`，自动识别唯一的后端目录。
@@ -25,8 +32,8 @@ Admin 根目录可直接执行 `install`、`run`、`build`，自动识别唯一�
 ## PyPI 安装
 
 ```bash
-python -m pip install 'yuanboot[all]==0.3.1'
-python -m pip install yuanbootctl-python==0.3.1
+python -m pip install 'yuanboot[all]==0.3.2'
+python -m pip install yuanbootctl-python==0.3.2
 yuanbootctl-python --version
 ```
 
@@ -36,15 +43,15 @@ yuanbootctl-python --version
 - `yuanbootctl-python`：工具安装包，依赖精确版本的 `yuanboot`；`[all]` 可启用全部标准组件。
 
 生成项目默认从 PyPI 安装。业务 `pyproject.toml` 中的框架依赖为
-`yuanboot==0.3.1`，组件依赖改为 `yuanboot[all]==0.3.1`；gRPC 基础依赖使用 `yuanboot[grpc]==0.3.1`。
+`yuanboot==0.3.2`，组件依赖改为 `yuanboot[all]==0.3.2`；gRPC 基础依赖使用 `yuanboot[grpc]==0.3.2`。
 
 ## 安装与生成项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[all]==0.3.1'
-yuanbootctl-python new mvc -n orders --framework-version 0.3.1
+python -m pip install 'yuanbootctl-python[all]==0.3.2'
+yuanbootctl-python new mvc -n orders --framework-version 0.3.2
 cd orders
-python -m pip install -e '.[dev,components]'
+python -m pip install -r requirements.txt
 yuanbootctl-python run
 ```
 
@@ -55,12 +62,12 @@ yuanbootctl-python run
 name = "orders"
 version = "0.1.0"
 dependencies = [
-  "yuanboot==0.3.1",
+  "yuanboot==0.3.2",
 ]
 
 [project.optional-dependencies]
 components = [
-  "yuanboot[all]==0.3.1",
+  "yuanboot[all]==0.3.2",
 ]
 ```
 
@@ -68,8 +75,8 @@ components = [
 `grpc` 模板自动启用 `yuanboot[grpc]`。
 默认版本从 `src/yuanboot/_version.py` 自动读取，与生成工具和框架保持一致。
 升级工具后新项目自动使用新版本；已有业务项目保留原固定版本。
-`--framework-version 0.3.1` 可指定 PyPI 版本。
-如需 Git，显式指定 `--framework-ref v0.3.1`，或用 `--framework-repo git@github.com:organisation/framework.git` 覆盖仓库。
+`--framework-version 0.3.2` 可指定 PyPI 版本。
+如需 Git，显式指定 `--framework-ref v0.3.2`，或用 `--framework-repo git@github.com:organisation/framework.git` 覆盖仓库。
 Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装 Git。
 私有仓库通过 SSH agent/部署密钥提供访问权限，不要把 token 写进 URL 或 pyproject。
 
@@ -79,7 +86,7 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 业务项目自己管理版本，与框架版本互不绑定。
 
 - 补丁版本 `v0.1.9`：修复兼容问题。
-- 次版本 `v0.3.1`：新增能力或 0.x 阶段的不兼容变化。
+- 次版本 `v0.4.0`：新增能力或 0.x 阶段的不兼容变化。
 - `v1.0.0` 后按语义化版本管理兼容性。
 
 已发布 tag 保持不可变；修复后新建 tag。业务升级时统一修改 PyPI 版本或 Git tag、重新锁定依赖、运行测试，再部署。
@@ -91,7 +98,7 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 
 1. 将待发布代码推送到 `master`。
 2. 打开仓库 **Actions → Build Release → Run workflow**，选择 `master`。
-3. 填写 `version`（例如 `0.3.1`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
+3. 填写 `version`（例如 `0.3.2`，不带 `v`），选择 `prerelease` 和 `draft`，默认均为 `true`。
 4. 工作流同步版本源，在 Python 3.6–3.14 上构建包，并为各平台编译独立命令行工具。
 5. 全部通过后，提交版本变更到 `master`，创建 `v<version>` tag，生成 GitHub Release，上传可执行文件、两个 PyPI 包各自的 wheel / sdist 和 SHA256SUMS。
 6. `draft=false` 的公开发布会自动启动 **Publish PyPI**，将同版本的框架包和工具包上传到正式 PyPI。
@@ -100,7 +107,7 @@ Git 选项与 `--framework-version` 不能混用；使用 Git 依赖时需安装
 
 ```bash
 gh workflow run Release.yml --ref master \
-  -f version=0.3.1 -f prerelease=false -f draft=false
+  -f version=0.3.2 -f prerelease=false -f draft=false
 ```
 
 已存在的 tag 会被拒绝，不会覆盖。构建期间如果 `master` 有更新，发布中止，需从最新 `master` 重新运行。
@@ -147,7 +154,7 @@ Token 只保存在 Secret 中，不写入代码、配置或命令参数。
 如果需要重试已发布的版本，手动运行 **Publish PyPI** 并填写相同版本：
 
 ```bash
-gh workflow run PublishPyPI.yml --ref master -f version=0.3.1
+gh workflow run PublishPyPI.yml --ref master -f version=0.3.2
 ```
 
 该工作流下载指定 Release 的四个 Python 包，核对 `SHA256SUMS`、检查包元数据后，
@@ -198,7 +205,7 @@ cd orders
 
 ```bash
 python -m venv .venv
-.venv/bin/python -m pip install -e '.[dev,components]'
+.venv/bin/python -m pip install -r requirements.txt
 ../yuanbootctl-python run --python .venv/bin/python
 ../yuanbootctl-python build --python .venv/bin/python --wheel
 ```

@@ -44,6 +44,82 @@ jobs:
         shell: bash
       - run: python -m pip install -e '.[all,binary]'
       - run: python packaging/build_binary.py
+      - name: Prepare Windows runtime verification
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir "$env:RUNNER_TEMP/framework"
+          "PIP_FIND_LINKS=$env:RUNNER_TEMP/framework" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@v5
+        if: runner.os == 'Windows'
+        with:
+          python-version: '3.7'
+          architecture: x64
+      - name: Run Windows Admin with embedded Python and external Python 3.7
+        if: runner.os == 'Windows'
+        shell: python
+        run: |
+          import json, os, socket, subprocess, sys, tempfile, time, urllib.request
+          from pathlib import Path
+          exe = str(Path('dist/bin/yuanbootctl-python.exe').resolve())
+          root = Path(tempfile.mkdtemp(prefix='yuanboot-admin-'))
+          subprocess.check_call([exe, 'new', 'admin', '-n', 'demo', '-p', str(root)])
+          project = root / 'demo'
+          backend = project / 'demo-server'
+          def run_server(name, flags=()):
+              with socket.socket() as sock:
+                  sock.bind(('127.0.0.1', 0))
+                  port = sock.getsockname()[1]
+              logfile = root / (name + '.log')
+              with logfile.open('w') as log:
+                  process = subprocess.Popen([exe, 'run', '--port', str(port)] + list(flags),
+                      cwd=str(project), stdout=log, stderr=subprocess.STDOUT)
+                  try:
+                      deadline = time.monotonic() + 300
+                      while time.monotonic() < deadline:
+                          if process.poll() is not None:
+                              raise AssertionError(logfile.read_text(errors='replace'))
+                          try:
+                              url = 'http://127.0.0.1:' + str(port)
+                              with urllib.request.urlopen(url + '/actuator/health/detail', timeout=2) as r:
+                                  assert json.load(r)['status'] == 'up'
+                              request = urllib.request.Request(url + '/v1/sys/captcha', data=b'{}',
+                                  headers={'Content-Type': 'application/json'})
+                              with urllib.request.urlopen(request, timeout=2) as r:
+                                  assert json.load(r)['data']['image'].startswith('data:image/png;base64,')
+                              break
+                          except OSError:
+                              time.sleep(.5)
+                      else:
+                          raise AssertionError('Startup timed out')
+                  finally:
+                      if process.poll() is None:
+                          subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], check=True)
+                      process.wait(timeout=30)
+                      print(logfile.read_text(errors='replace'))
+              assert not list(backend.glob('*.egg-info'))
+              assert not (backend / 'build').exists()
+              assert not (backend / 'dist').exists()
+          run_server('embedded')
+          subprocess.check_call([sys.executable, '-m', 'venv', str(backend / '.venv')])
+          run_server('external-auto-install')
+          python = str(backend / '.venv/Scripts/python.exe')
+          subprocess.check_call([python, '-c',
+              'import jwt, ssl, sqlite3; from cryptography.hazmat.bindings import _rust; '
+              'assert jwt.decode(jwt.encode({"sub":"admin"}, "secret", algorithm="HS256"), '
+              '"secret", algorithms=["HS256"])["sub"] == "admin"'])
+          assert subprocess.call([python, '-m', 'pip', 'show', 'build'],
+              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0
+          run_server('external-reuse')
+          subprocess.check_call([exe, 'install'], cwd=str(project))
+          subprocess.check_call([python, '-m', 'pip', 'install', '-r', 'requirements.txt'], cwd=str(project))
+          assert not list(backend.glob('*.egg-info'))
+          assert not (backend / 'build').exists()
+          assert subprocess.call([python, '-m', 'pip', 'show', 'build'],
+              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0
+          subprocess.check_call([exe, 'build', '--wheel'], cwd=str(project))
+          assert list((backend / 'dist').glob('*.whl'))
+          print('Windows Admin: embedded/external startup, JWT/crypto, captcha, runtime-only install and separate build passed')
       - name: CLI version
         shell: bash
         run: |

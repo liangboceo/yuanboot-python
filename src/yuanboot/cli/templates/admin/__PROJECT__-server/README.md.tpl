@@ -3,7 +3,7 @@
 基于 yuanboot-python 的管理后台 API，提供验证码登录、JWT 会话、用户、角色、菜单、部门和系统配置。
 
 ```bash
-python -m pip install -e '.[dev]'
+python -m pip install -r requirements.txt
 yuanbootctl-python run
 ```
 

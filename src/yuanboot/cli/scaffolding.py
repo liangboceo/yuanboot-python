@@ -131,6 +131,9 @@ def create_project(
             )
         ),
     }
+    substitutions["__YUANBOOT_RUNTIME_REQUIREMENT__"] = json.loads(
+        substitutions["__YUANBOOT_REQUIREMENT__"]
+    )
     for layer in ("common", *TEMPLATES[template].layers):
         for relative, content in _walk(root.joinpath(layer)):
             if template == "admin" and layer != "admin":

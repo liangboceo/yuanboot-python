@@ -1,3 +1,2 @@
-# Install from the Admin project root.
-# Dependency versions are maintained in __PROJECT__-server/pyproject.toml.
--e ./__PROJECT__-server[dev]
+# Backend runtime dependencies; no business package build is required.
+-r "./__PROJECT__-server/requirements.txt"

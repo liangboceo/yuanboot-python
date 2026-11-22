@@ -24,7 +24,7 @@ python -m pip install 'yuanbootctl-python[all]'
 yuanbootctl-python new --list
 yuanbootctl-python new webapi -n demo
 cd demo
-python -m pip install -e '.[dev,components]'
+python -m pip install -r requirements.txt
 yuanbootctl-python run --profile dev
 ```
 

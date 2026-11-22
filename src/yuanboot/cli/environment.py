@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -17,23 +18,68 @@ def _venv_python(project):
     return project / ".venv" / suffix
 
 
-def _ensure_requirements(project):
+_BEGIN_RUNTIME = "# BEGIN yuanboot runtime dependencies (managed from pyproject.toml)"
+_END_RUNTIME = "# END yuanboot runtime dependencies"
+
+
+def _runtime_block(metadata):
+    dependencies = metadata.get("project", {}).get("dependencies", [])
+    return "\n".join([_BEGIN_RUNTIME, *dependencies, _END_RUNTIME]) + "\n"
+
+
+def _ensure_requirements(project, metadata):
+    """Sync generated runtime entries, preserving custom requirements and options."""
     requirements = project / "requirements.txt"
     if not requirements.exists():
-        requirements.write_text(
-            "# Dependency versions are maintained in pyproject.toml.\n-e .[dev]\n",
-            encoding="utf-8",
-        )
+        requirements.write_text(_runtime_block(metadata), encoding="utf-8")
     if project.name.endswith("-server"):
         frontend = project.parent / (project.name[: -len("-server")] + "-web")
-        requirements = project.parent / "requirements.txt"
-        if frontend.is_dir() and not requirements.exists():
-            requirements.write_text(
-                "# Install from the Admin project root.\n-e "
-                + json.dumps("./" + project.name + "[dev]")
-                + "\n",
-                encoding="utf-8",
+        parent = project.parent / "requirements.txt"
+        if frontend.is_dir() and not parent.exists():
+            parent.write_text('-r "./' + project.name + '/requirements.txt"\n', encoding="utf-8")
+    visited = set()
+
+    def update(filename):
+        filename = filename.resolve()
+        if filename in visited or not filename.is_file():
+            return
+        visited.add(filename)
+        original = filename.read_text(encoding="utf-8")
+        content = re.sub(
+            re.escape(_BEGIN_RUNTIME) + r".*?" + re.escape(_END_RUNTIME) + r"\n?",
+            lambda match: _runtime_block(metadata),
+            original,
+            flags=re.S,
+        )
+        lines = []
+        for line in content.splitlines(keepends=True):
+            value = line.strip()
+            include = re.match(
+                r"^(?:-r\s*|--requirement(?:=|\s+)|-c\s*|--constraint(?:=|\s+))(.+)$", value
             )
+            if include:
+                target = include.group(1).split(" #", 1)[0].strip().strip("\"'")
+                if not re.match(r"https?://", target):
+                    update(filename.parent / target)
+            value = re.sub(r"^(?:-e\s*|--editable(?:=|\s+))", "", value)
+            value = value.split(" #", 1)[0].strip().strip("\"'")
+            match = re.fullmatch(r"(.+?)(?:\[([^]]*)\])?", value)
+            if match and (filename.parent / match.group(1)).resolve() == project:
+                # Old templates installed the business package with [dev]. Only its
+                # declared runtime dependencies belong in install/run.
+                lines.append(_runtime_block(metadata))
+                optional = metadata.get("project", {}).get("optional-dependencies", {})
+                for extra in (match.group(2) or "").split(","):
+                    if extra.strip() not in ("dev", "build"):
+                        lines.extend(dep + "\n" for dep in optional.get(extra.strip(), []))
+            else:
+                lines.append(line)
+        content = "".join(lines)
+        if content != original:
+            filename.write_text(content, encoding="utf-8")
+
+    for filename in _requirements_files(project):
+        update(filename)
 
 
 def _requirements_files(project):
@@ -110,7 +156,7 @@ try:
                         and Path(requirement.link.file_path).resolve() == project
                     )
                     if local_project:
-                        for extra in requirement.extras:
+                        for extra in requirement.extras - {"dev", "build"}:
                             optional = metadata.get("project", {}).get("optional-dependencies", {})
                             for dependency in optional.get(extra, []):
                                 check(dependency)
@@ -157,6 +203,7 @@ def _prepare_environment(
     build=False,
     allow_embedded=False,
 ):
+    _ensure_requirements(project, metadata)
     explicit = python is not None
     if python and not Path(python).is_absolute() and Path(python).parent != Path("."):
         python = str((project / python).resolve())
@@ -170,15 +217,13 @@ def _prepare_environment(
             return None
     if refresh or not python or not _dependencies_ready(python, metadata, project, build=build):
         if explicit:
-            _install_dependencies(project, python, index_url)
+            _install_dependencies(project, python, index_url, build=build)
         else:
-            python = str(_install_project(project, index_url=index_url))
-        if build and not _dependencies_ready(python, metadata, project, build=True):
-            _pip_install(project, python, ["build"], index_url)
+            python = str(_install_project(project, index_url=index_url, build=build))
     return python
 
 
-def _install_project(project, python=None, index_url=None):
+def _install_project(project, python=None, index_url=None, *, build=False):
     executable = _venv_python(project)
     env = _external_environment(os.environ)
     with _external_runtime():
@@ -206,7 +251,7 @@ def _install_project(project, python=None, index_url=None):
                 raise ValueError(
                     "Could not create .venv. Check that Python's venv module is installed."
                 )
-    _install_dependencies(project, str(executable), index_url)
+    _install_dependencies(project, str(executable), index_url, build=build)
     print(f"Dependencies ready: {executable}", flush=True)
     return executable
 
@@ -226,8 +271,10 @@ def _pip_install(project, python, arguments, index_url=None):
         )
 
 
-def _install_dependencies(project, python, index_url=None):
-    _ensure_requirements(project)
+def _install_dependencies(project, python, index_url=None, *, build=False):
+    with (project / "pyproject.toml").open("rb") as stream:
+        metadata = load_toml(stream)
+    _ensure_requirements(project, metadata)
     print(f"Installing backend dependencies: {project}", flush=True)
     with _external_runtime():
         environment = _external_environment(os.environ)
@@ -240,15 +287,21 @@ def _install_dependencies(project, python, index_url=None):
         ) and _run_process([python, "-m", "ensurepip", "--upgrade"], cwd=project, env=environment):
             raise ValueError("Could not initialize pip in the selected Python environment.")
     _pip_install(project, python, ["--upgrade", "pip"], index_url)
-    _pip_install(project, python, ["-e", ".[dev]"], index_url)
-    for requirements in _requirements_files(project):
-        _pip_install(
-            requirements.parent,
-            python,
-            ["-r", str(requirements), "-e", str(project) + "[dev]"],
-            index_url,
+    dependencies = list(metadata.get("project", {}).get("dependencies", []))
+    if build:
+        dependencies.extend(
+            metadata.get("project", {}).get("optional-dependencies", {}).get("dev", [])
         )
-    with (project / "pyproject.toml").open("rb") as stream:
-        metadata = load_toml(stream)
-    if not _dependencies_ready(python, metadata, project, build=True):
-        _pip_install(project, python, ["build"], index_url)
+        dependencies.extend(
+            [
+                "build>=0.7,<0.8; python_version < '3.8'",
+                "build>=1.2; python_version >= '3.8'",
+            ]
+        )
+    files = _requirements_files(project)
+    if not files and dependencies:
+        _pip_install(project, python, dependencies, index_url)
+    for requirements in files:
+        _pip_install(
+            requirements.parent, python, [*dependencies, "-r", str(requirements)], index_url
+        )

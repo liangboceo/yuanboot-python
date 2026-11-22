@@ -5,7 +5,7 @@
 ## 创建项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.3.1'
+python -m pip install 'yuanbootctl-python[admin]==0.3.2'
 yuanbootctl-python new admin -n my-admin
 cd my-admin
 ```
@@ -21,7 +21,7 @@ cd my-admin
 cd my-admin-server
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
+python -m pip install -r requirements.txt
 yuanbootctl-python run
 ```
 
@@ -50,7 +50,7 @@ pnpm dev
 
 ## 安装依赖与运行
 
-0.3.1 起，在管理后台项目根目录执行以下命令即可管理后端：
+0.3.2 起，在管理后台项目根目录执行以下命令即可管理后端：
 
 ```bash
 cd my-admin
@@ -60,9 +60,10 @@ yuanbootctl-python build
 ```
 
 CLI 自动定位 `my-admin-server/pyproject.toml`。`install` 在后端创建或复用 `.venv`，
-安装项目依赖与开发依赖；Python 3.6 / 3.7 自动选择兼容的 pip、build 和组件版本。
+仅安装运行依赖；Python 3.6 / 3.7 自动选择兼容的 pip 和组件版本。
 `run` 会检查声明的依赖及组件 extras，缺失或版本不匹配时先安装再启动。
-`build` 同样检查依赖，并自动补齐构建工具。已有依赖完整的环境会直接复用。
+`run` 只运行，不构建业务项目；`install` 和 `run` 不安装业务包，不生成业务 `egg-info`、`build/` 或 `dist/`。
+仅执行 `build` 时安装构建工具并生成 wheel / sdist。已有依赖完整的环境会直接复用。
 
 新建时可一次完成后端依赖安装：
 
@@ -86,11 +87,12 @@ python -m pip install -r requirements.txt
 ```
 
 普通项目在项目根目录执行；Admin 在管理后台根目录或后端目录执行均可。
-生成的 requirements.txt 引用当前项目的 `[dev]` 依赖，不重复列出框架和组件版本。
+生成的 requirements.txt 直接声明运行依赖，Admin 根目录通过 `-r` 引用后端文件。
+CLI 将后端文件的标记区与 pyproject.toml 的运行依赖同步；标记区外保留业务追加内容。
 业务依赖可写在项目 pyproject.toml，也可追加到 requirements.txt；嵌套的 `-r` / `-c` 文件由 pip 解析。
 业务 wheel 的运行依赖以 pyproject.toml 为准；requirements.txt 可补充部署和开发环境依赖。
 CLI 会同时检查和安装 Admin 根目录、后端目录中的 requirements.txt，保留已有内容。
-旧模板缺少依赖文件时，`install` 会自动补齐，已有文件不会覆盖。
+旧模板缺少依赖文件时自动补齐；旧模板中的项目自身 `-e .[dev]` 引用自动迁移为运行依赖，保留其他条目。
 
 框架组件及兼容版本统一在框架仓库的 pyproject.toml 维护。
 构建工具版本集中在 `yuanboot[build]`，生成项目的 `[dev]` 引用同版本的这一依赖组。

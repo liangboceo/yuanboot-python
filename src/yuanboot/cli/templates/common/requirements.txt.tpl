@@ -1,2 +1,4 @@
-# Project dependencies and build tools are maintained in pyproject.toml.
--e .[dev]
+# BEGIN yuanboot runtime dependencies (managed from pyproject.toml)
+__YUANBOOT_RUNTIME_REQUIREMENT__
+# END yuanboot runtime dependencies
+# Add extra runtime dependencies below, or declare them in pyproject.toml.
