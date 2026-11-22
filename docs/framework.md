@@ -184,7 +184,7 @@ host = (
 独立 `use_health(router, {"database": check_db})` 支持自定义同步/异步检查和超时。
 默认请求中间件生成/透传 `X-Request-ID`、记录访问耗时、回收请求作用域，并把未处理异常转换为不含异常堆栈的 JSON 500。日志使用统一的 zap / logrus 文本或 JSON 格式，并关联 Request ID。
 宿主启动与 Swagger 文档显示框架版本、版权和 MIT 许可，详细配置见核心组件文档。
-可选 `pip install 'yuanboot[jwt]==0.3.2'` 后使用 `yuanboot.web.security.JwtBearer` 作为 FastAPI Security 依赖验证 JWT。
+可选 `pip install 'yuanboot[jwt]==0.3.3'` 后使用 `yuanboot.web.security.JwtBearer` 作为 FastAPI Security 依赖验证 JWT。
 
 
 ## PyCharm 调试与直接运行

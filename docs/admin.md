@@ -5,7 +5,7 @@
 ## 创建项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.3.2'
+python -m pip install 'yuanbootctl-python[admin]==0.3.3'
 yuanbootctl-python new admin -n my-admin
 cd my-admin
 ```
@@ -50,7 +50,7 @@ pnpm dev
 
 ## 安装依赖与运行
 
-0.3.2 起，在管理后台项目根目录执行以下命令即可管理后端：
+0.3.3 起，在管理后台项目根目录执行以下命令即可管理后端：
 
 ```bash
 cd my-admin

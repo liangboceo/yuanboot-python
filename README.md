@@ -36,7 +36,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.3.2
+VERSION=0.3.3
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -60,9 +60,9 @@ Python 3.6 / 3.7 自动使用兼容依赖，新版 Python 使用现代依赖；�
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.3.2'
+python -m pip install 'yuanboot[all]==0.3.3'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.3.2
+python -m pip install yuanbootctl-python==0.3.3
 yuanbootctl-python --version
 ```
 
@@ -74,7 +74,7 @@ yuanbootctl-python --version
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanbootctl-python[all]==0.3.2'
+python -m pip install 'yuanbootctl-python[all]==0.3.3'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -r requirements.txt
@@ -83,10 +83,10 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.3.2`，
-组件固定 `yuanboot[all]==0.3.2`，gRPC 固定 `yuanboot[grpc]==0.3.2`。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.3.3`，
+组件固定 `yuanboot[all]==0.3.3`，gRPC 固定 `yuanboot[grpc]==0.3.3`。
 版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
-可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.3.2` 切换为 Git tag 依赖。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.3.3` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
@@ -143,7 +143,7 @@ Admin 项目在根目录执行这三个命令，会自动选择 `<项目名>-ser
 ## 管理后台
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.3.2'
+python -m pip install 'yuanbootctl-python[admin]==0.3.3'
 yuanbootctl-python new admin -n my-admin
 cd my-admin/my-admin-server
 python -m pip install -r requirements.txt

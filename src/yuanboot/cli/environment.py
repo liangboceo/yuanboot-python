@@ -61,10 +61,25 @@ def _ensure_requirements(project, metadata):
                 target = include.group(1).split(" #", 1)[0].strip().strip("\"'")
                 if not re.match(r"https?://", target):
                     update(filename.parent / target)
-            value = re.sub(r"^(?:-e\s*|--editable(?:=|\s+))", "", value)
+                lines.append(line)
+                continue
+            editable = re.match(r"^(?:-e\s*|--editable(?:=|\s+))", value)
+            if editable:
+                value = value[editable.end() :]
             value = value.split(" #", 1)[0].strip().strip("\"'")
+            # Only local project references need filesystem resolution. Pip
+            # directives, URLs and package specifiers are not Windows paths.
+            local = value.startswith((".", "/", "\\")) or re.match(r"^[A-Za-z]:[\\/]", value)
+            url = re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", value)
+            if not value or value.startswith(("#", "-")) or url or not (editable or local):
+                lines.append(line)
+                continue
             match = re.fullmatch(r"(.+?)(?:\[([^]]*)\])?", value)
-            if match and (filename.parent / match.group(1)).resolve() == project:
+            try:
+                own_project = match and (filename.parent / match.group(1)).resolve() == project
+            except (OSError, ValueError):
+                own_project = False
+            if own_project:
                 # Old templates installed the business package with [dev]. Only its
                 # declared runtime dependencies belong in install/run.
                 lines.append(_runtime_block(metadata))

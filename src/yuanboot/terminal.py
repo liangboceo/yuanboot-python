@@ -24,6 +24,27 @@ LOGO = (
 )
 
 
+def _windows_ansi(stream):
+    """Enable ANSI processing on the actual console handle, if supported."""
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+
+    try:
+        handle = msvcrt.get_osfhandle(stream.fileno())
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.GetConsoleMode.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+        kernel.GetConsoleMode.restype = wintypes.BOOL
+        kernel.SetConsoleMode.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.SetConsoleMode.restype = wintypes.BOOL
+        flags = wintypes.DWORD()
+        if not kernel.GetConsoleMode(handle, ctypes.byref(flags)):
+            return False
+        return bool(kernel.SetConsoleMode(handle, flags.value | 0x0004))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def use_color(mode: "ColorMode" = "auto", stream=None) -> "bool":
     if mode != "auto":
         return mode == "always"
@@ -32,7 +53,11 @@ def use_color(mode: "ColorMode" = "auto", stream=None) -> "bool":
     if "FORCE_COLOR" in os.environ:
         return os.environ["FORCE_COLOR"] != "0"
     stream = sys.stdout if stream is None else stream
-    return bool(getattr(stream, "isatty", lambda: False)() or os.getenv("PYCHARM_HOSTED"))
+    if not getattr(stream, "isatty", lambda: False)():
+        return False
+    if os.name == "nt":
+        return _windows_ansi(stream)
+    return True
 
 
 def colorize(value, color: "str", enabled: "bool") -> "str":

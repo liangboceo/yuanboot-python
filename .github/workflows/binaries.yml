@@ -63,7 +63,7 @@ jobs:
           from pathlib import Path
           sys.stdout.reconfigure(encoding='utf-8')
           exe = str(Path('dist/bin/yuanbootctl-python.exe').resolve())
-          root = Path(tempfile.mkdtemp(prefix='yuanboot-admin-'))
+          root = Path(tempfile.mkdtemp(prefix='yuanboot admin '))
           subprocess.check_call([exe, 'new', 'admin', '-n', 'demo', '-p', str(root)])
           project = root / 'demo'
           backend = project / 'demo-server'
@@ -102,9 +102,10 @@ jobs:
               assert not (backend / 'build').exists()
               assert not (backend / 'dist').exists()
           run_server('embedded')
-          subprocess.check_call([sys.executable, '-m', 'venv', str(backend / '.venv')])
-          run_server('external-auto-install')
           python = str(backend / '.venv/Scripts/python.exe')
+          subprocess.check_call([exe, 'install', '--python', sys.executable], cwd=str(backend))
+          subprocess.check_call([python, '-m', 'pip', 'uninstall', '-y', 'Pillow'])
+          run_server('external-auto-install')
           subprocess.check_call([python, '-c',
               'import jwt, ssl, sqlite3; from cryptography.hazmat.bindings import _rust; '
               'assert jwt.decode(jwt.encode({"sub":"admin"}, "secret", algorithm="HS256"), '
