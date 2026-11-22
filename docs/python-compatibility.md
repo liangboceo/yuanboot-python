@@ -35,7 +35,15 @@ Python 3.6 / 3.7 及其兼容依赖已结束上游维护；已有环境可继续
 ## 项目模板
 
 七种模板均支持生成、安装和运行：`webapi`、`simpleweb`、`mvc`、`microservice`、`console`、`grpc`、`admin`。
-新项目默认依赖与工具相同版本的框架；已有项目需要升级 pyproject.toml 中的框架版本并重新安装依赖。
+新项目默认依赖与工具相同版本的框架。
+
+已有 0.2.x 脚手架项目迁移到 Python 3.6 / 3.7 时，需要同步：
+
+- 项目 `pyproject.toml` 的 `requires-python` 改为 `>=3.6.2`，框架依赖升级为 `0.3.0`。
+- 构建配置和 `_build_backend/`、`setup.py`、`MANIFEST.in` 使用新模板中的版本，以支持旧解释器安装。
+- 业务代码使用目标 Python 支持的语法和依赖 API，注入写法见下文。
+
+可用新版工具在独立目录生成同类项目，对照迁移业务代码和配置，保留原项目的数据和密钥。
 
 ```bash
 yuanbootctl-python new admin -n my-admin
