@@ -18,7 +18,7 @@ requires-python = ">=3.6.2"
 dependencies = [__YUANBOOT_REQUIREMENT__]
 
 [project.optional-dependencies]
-dev = ["build>=0.7,<0.8; python_version < '3.8'", "build>=1.2; python_version >= '3.8'"]
+dev = [__YUANBOOT_BUILD_REQUIREMENT__]
 components = [__YUANBOOT_COMPONENTS_REQUIREMENT__]
 
 [tool.hatch.build.targets.wheel]

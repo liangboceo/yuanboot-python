@@ -77,3 +77,18 @@ gRPC 模板：监听 `yuanboot.grpc.address`，默认 127.0.0.1:9090。
 `yuanbootctl-python run --port 9000 --reload` 适用于 Web 开发；
 `yuanbootctl-python run --workers 2` 适用于 Web 多进程部署。
 每个 worker 都会运行自己的后台服务，需要任务唯一性时请使用外部协调机制。
+
+## 依赖管理
+
+```bash
+yuanbootctl-python install
+yuanbootctl-python run
+yuanbootctl-python build
+```
+
+`install` 自动管理项目 `.venv`，安装运行和开发依赖；`run` 缺少依赖时先安装，
+`build` 自动补齐依赖与构建工具。依赖完整时复用已有环境。
+`install --python /path/to/python` 可选择虚拟环境解释器，`--index-url` 可指定包索引。
+
+也可执行标准命令 `python -m pip install -r requirements.txt`。依赖文件引用项目的 `[dev]`，
+框架版本由 pyproject.toml 维护；业务依赖可追加到 requirements.txt，CLI 会一并检查和安装。

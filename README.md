@@ -21,7 +21,7 @@
 - 统一启动版权信息、zap / logrus 文本与 JSON 日志、请求追踪、健康检查、Prometheus 和 JWT。
 - Swagger 展示框架版本、版权、联系信息与 MIT 许可，并保留业务文档配置。
 - HTTP 客户端、定时任务、SMTP、gRPC 和 XXL-Job BEAN 执行器。
-- `yuanbootctl-python` 提供七类项目模板、运行和构建命令。
+- `yuanbootctl-python` 提供七类项目模板、依赖安装、运行和构建命令。
 
 ## 下载命令行工具
 
@@ -36,7 +36,7 @@
 例如 Linux amd64：
 
 ```bash
-VERSION=0.3.0
+VERSION=0.3.1
 curl -fLO "https://github.com/liangboceo/yuanboot-python/releases/download/v${VERSION}/yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 tar -xzf "yuanbootctl-python_${VERSION}_linux_amd64.tar.gz"
 chmod +x yuanbootctl-python
@@ -51,7 +51,7 @@ Release 同时提供 `SHA256SUMS`、wheel 和源码包。
 
 独立可执行文件包含 Python 运行时、框架和标准组件，可以直接创建、运行模板项目。
 业务增加其他 Python 依赖后，可使用 `run --python /path/to/.venv/bin/python` 选择业务环境。
-`build` 打包 Python 项目，需要业务环境安装 `build`，详见 [命令行与发布说明](docs/releases.md)。
+`build` 自动准备业务环境和构建工具，再打包 Python 项目，详见 [命令行与发布说明](docs/releases.md)。
 
 Python 3.6 / 3.7 自动使用兼容依赖，新版 Python 使用现代依赖；详见 [Python 版本支持](docs/python-compatibility.md)。
 
@@ -60,9 +60,9 @@ Python 3.6 / 3.7 自动使用兼容依赖，新版 Python 使用现代依赖；�
 从公开 PyPI 安装框架或项目工具：
 
 ```bash
-python -m pip install 'yuanboot[all]==0.3.0'
+python -m pip install 'yuanboot[all]==0.3.1'
 # 也可通过工具包安装同版本框架和命令：
-python -m pip install yuanbootctl-python==0.3.0
+python -m pip install yuanbootctl-python==0.3.1
 yuanbootctl-python --version
 ```
 
@@ -74,7 +74,7 @@ yuanbootctl-python --version
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install 'yuanbootctl-python[all]==0.3.0'
+python -m pip install 'yuanbootctl-python[all]==0.3.1'
 yuanbootctl-python new mvc -n orders
 cd orders
 python -m pip install -e '.[dev,components]'
@@ -83,10 +83,10 @@ yuanbootctl-python run --reload
 
 按需选择 `mysql`、`redis`、`nacos`、`grpc` 等 extras；`all` 安装全部标准组件。
 框架和业务项目分别管理版本，业务项目提交自己的依赖锁文件。
-生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.3.0`，
-组件固定 `yuanboot[all]==0.3.0`，gRPC 固定 `yuanboot[grpc]==0.3.0`。
+生成项目默认从 PyPI 安装，基础依赖固定 `yuanboot==0.3.1`，
+组件固定 `yuanboot[all]==0.3.1`，gRPC 固定 `yuanboot[grpc]==0.3.1`。
 版本自动读取生成工具内置的框架版本；升级工具后新生成项目使用新版本，已有项目保留原固定版本。
-可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.3.0` 切换为 Git tag 依赖。
+可用 `--framework-version` 选择其他 PyPI 版本，或显式用 `--framework-ref v0.3.1` 切换为 Git tag 依赖。
 
 框架版本通过 GitHub **Actions → Build Release** 填写 version 发布。
 公开的 Release/tag 创建成功后会自动启动 **Publish PyPI**，将两个同版本包上传到公开 PyPI。
@@ -135,10 +135,15 @@ yuanbootctl-python build
 yuanbootctl-python version
 ```
 
+## 自动安装依赖
+
+`yuanbootctl-python install` 创建或复用项目 `.venv` 并安装依赖。`run` 缺少依赖时先安装，`build` 自动补齐依赖和构建工具。也可创建时执行 `new webapi -n demo --install`。
+Admin 项目在根目录执行这三个命令，会自动选择 `<项目名>-server`。`--index-url` 支持指定包索引。
+
 ## 管理后台
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.3.0'
+python -m pip install 'yuanbootctl-python[admin]==0.3.1'
 yuanbootctl-python new admin -n my-admin
 cd my-admin/my-admin-server
 python -m pip install -e '.[dev]'

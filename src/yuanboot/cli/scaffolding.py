@@ -114,6 +114,14 @@ def create_project(
                 version=framework_version,
             )
         ),
+        "__YUANBOOT_BUILD_REQUIREMENT__": json.dumps(
+            framework_requirement(
+                repository=framework_repo,
+                ref=framework_ref,
+                extras="build",
+                version=framework_version,
+            )
+        ),
         "__YUANBOOT_COMPONENTS_REQUIREMENT__": json.dumps(
             framework_requirement(
                 repository=framework_repo,

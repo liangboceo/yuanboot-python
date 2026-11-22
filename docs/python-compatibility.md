@@ -9,7 +9,7 @@ Python 3.6 分支使用 3.6.15 验证，Python 3.7 分支使用 3.7.17 验证。
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install 'yuanbootctl-python[all]==0.3.0'
+python -m pip install 'yuanbootctl-python[all]==0.3.1'
 yuanbootctl-python --version
 yuanbootctl-python new webapi -n demo
 cd demo
@@ -39,7 +39,7 @@ Python 3.6 / 3.7 及其兼容依赖已结束上游维护；已有环境可继续
 
 已有 0.2.x 脚手架项目迁移到 Python 3.6 / 3.7 时，需要同步：
 
-- 项目 `pyproject.toml` 的 `requires-python` 改为 `>=3.6.2`，框架依赖升级为 `0.3.0`。
+- 项目 `pyproject.toml` 的 `requires-python` 改为 `>=3.6.2`，框架依赖升级为 `0.3.1`。
 - 构建配置和 `_build_backend/`、`setup.py`、`MANIFEST.in` 使用新模板中的版本，以支持旧解释器安装。
 - 业务代码使用目标 Python 支持的语法和依赖 API，注入写法见下文。
 
@@ -93,3 +93,6 @@ GitHub Release 的独立二进制内含 Python 运行时，可直接创建和运
 需要使用业务环境中的 Python 3.6–3.14 时，通过 `run --python /path/to/python` 显式指定。
 Git tag 源码安装、wheel 安装及生成项目的源码构建都支持旧版 Python。
 发布工作流验证 3.6–3.14，五个平台的独立二进制继续在受支持的构建环境中原生编译。
+
+`install`、`run`、`build` 在 Admin 根目录均可执行，依赖文件和构建工具会自动准备。
+传统 `python -m pip install -r requirements.txt` 同样支持。

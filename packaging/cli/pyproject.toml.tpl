@@ -25,6 +25,7 @@ classifiers = [
 dependencies = ["yuanboot==__VERSION__"]
 
 [project.optional-dependencies]
+build = ["yuanboot[build]==__VERSION__"]
 all = ["yuanboot[all]==__VERSION__"]
 admin = ["yuanboot[admin]==__VERSION__"]
 

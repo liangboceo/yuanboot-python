@@ -1,49 +1,21 @@
 import argparse
-import importlib.util
 import os
 import signal
-import subprocess
 import sys
 import typing
-from contextlib import contextmanager
 from pathlib import Path
 
 from yuanboot import __version__
 from yuanboot import logging as framework_logging
+from yuanboot.cli.environment import _dependencies_ready as _dependencies_ready
+from yuanboot.cli.environment import _install_project, _prepare_environment
+from yuanboot.cli.process import _external_environment, _external_runtime, _run_process
 from yuanboot.cli.scaffolding import TEMPLATES, create_project
 from yuanboot.compat import load_toml
 from yuanboot.configuration import ConfigurationBuilder
 from yuanboot.environment import PROFILES
 from yuanboot.terminal import print_banner
 from yuanboot.web.application import server_address
-
-
-def _run_process(command, **options):
-    """Forward container/process signals to the managed server before waiting for exit."""
-    if os.name == "posix":
-        # The CLI forwards terminal signals; isolating the child prevents duplicate SIGINTs.
-        options.setdefault("start_new_session", True)
-    with subprocess.Popen(command, **options) as process:
-        previous = {}
-        forwarded_signal = None
-
-        def forward(signum, frame):
-            nonlocal forwarded_signal
-            forwarded_signal = signum
-            if process.poll() is None:
-                process.send_signal(signum)
-
-        try:
-            for sig in (signal.SIGINT, signal.SIGTERM):
-                previous[sig] = signal.signal(sig, forward)
-            code = process.wait()
-            # Uvicorn re-raises a handled signal after its graceful shutdown.
-            if forwarded_signal is not None and code == -forwarded_signal:
-                return 0
-            return code if code >= 0 else 128 - code
-        finally:
-            for sig, handler in previous.items():
-                signal.signal(sig, handler)
 
 
 def _parser():
@@ -61,6 +33,13 @@ def _parser():
     new.add_argument("--framework-version", help="PyPI framework version (default: tool version)")
     new.add_argument("--framework-repo", help="Use a Git repository instead of PyPI")
     new.add_argument("--framework-ref", help="Use a Git ref instead of PyPI")
+    new.add_argument("--install", action="store_true", help="Create .venv and install dependencies")
+    new.add_argument("--python", help="Python interpreter used to create .venv")
+    new.add_argument("--index-url", help="Package index for dependency installation")
+    install = commands.add_parser("install", help="Install backend dependencies in project .venv")
+    install.add_argument("-p", "--path", default=".")
+    install.add_argument("--python", help="Python interpreter used to create .venv")
+    install.add_argument("--index-url", help="Package index for dependency installation")
     run = commands.add_parser("run", help="Run the current project's web or console host")
     run.add_argument("-p", "--path", default=".")
     run.add_argument("--profile", choices=PROFILES)
@@ -69,22 +48,59 @@ def _parser():
     run.add_argument("--reload", action="store_true")
     run.add_argument("--workers", type=int, default=1)
     run.add_argument("--python", help="Use a Python environment with your project's dependencies")
+    run.add_argument(
+        "--install", action="store_true", help="Install or refresh project dependencies"
+    )
+    run.add_argument("--index-url", help="Package index for dependency installation")
     build = commands.add_parser("build", help="Build wheel and sdist using python -m build")
     build.add_argument("-p", "--path", default=".")
     build.add_argument("--wheel", action="store_true")
     build.add_argument("--sdist", action="store_true")
     build.add_argument("--outdir")
-    build.add_argument("--python", help="Python interpreter with the build package installed")
+    build.add_argument("--python", help="Python interpreter used to build the project")
+    build.add_argument("--index-url", help="Package index for dependency installation")
     commands.add_parser("version", help="Print framework version")
     return parser
 
 
+def _project_directory(path):
+    """Resolve an application directory or the unique backend of an Admin project."""
+    project = Path(path).expanduser().resolve()
+    if not project.is_dir():
+        raise ValueError(f"Project directory does not exist: {project}")
+    if (project / "pyproject.toml").is_file():
+        return project
+    backends = [
+        manifest.parent.resolve()
+        for manifest in sorted(project.glob("*-server/pyproject.toml"))
+        if (project / (manifest.parent.name[: -len("-server")] + "-web")).is_dir()
+    ]
+    if len(backends) == 1:
+        return backends[0]
+    if backends:
+        names = ", ".join(backend.name for backend in backends)
+        raise ValueError(
+            f"Multiple Admin backends found in {project}: {names}. "
+            "Use --path to select a backend directory."
+        )
+    raise ValueError(
+        f"No pyproject.toml found in {project}. "
+        "Run from the project directory or use --path <project-directory>. "
+        "For Admin projects, select the directory containing the server and web folders "
+        "or the server directory itself."
+    )
+
+
 def _run(args):
-    project = Path(args.path).expanduser().resolve()
+    project = _project_directory(args.path)
+    if project != Path(args.path).expanduser().resolve():
+        print(f"Using Admin backend: {project}", flush=True)
     with (project / "pyproject.toml").open("rb") as stream:
-        settings = load_toml(stream).get("tool", {}).get("yuanboot", {})
+        metadata = load_toml(stream)
+    settings = metadata.get("tool", {}).get("yuanboot", {})
     if not settings:
         raise ValueError("Missing [tool.yuanboot] configuration in pyproject.toml")
+    python = args.python
     env = os.environ.copy()
     if args.profile:
         env["YUANBOOT_PROFILE"] = args.profile
@@ -96,7 +112,7 @@ def _run(args):
         module = settings.get("module")
         if not module:
             raise ValueError("Console projects require tool.yuanboot.module")
-        command = [args.python or sys.executable, "-m", module]
+        command = [python or sys.executable, "-m", module]
     else:
         target = settings.get("app")
         if not target:
@@ -117,7 +133,7 @@ def _run(args):
         if not 0 <= port <= 65535:
             raise ValueError("Port must be between 0 and 65535")
         command = [
-            args.python or sys.executable,
+            python or sys.executable,
             "-m",
             "uvicorn",
             target,
@@ -138,37 +154,19 @@ def _run(args):
         for key, flag in (("cert", "--ssl-certfile"), ("key", "--ssl-keyfile")):
             if tls.get_string(key):
                 command.extend([flag, tls.get_string(key)])
-    if getattr(sys, "frozen", False) and not args.python:
+    python = _prepare_environment(
+        project,
+        metadata,
+        args.python,
+        args.index_url,
+        refresh=args.install,
+        allow_embedded=True,
+    )
+    command[0] = python or sys.executable
+    if getattr(sys, "frozen", False) and not python:
         return _run_embedded(command[2:], project, env)
     with _external_runtime():
         return _run_process(command, cwd=project, env=_external_environment(env))
-
-
-def _external_environment(env):
-    env = env.copy()
-    if getattr(sys, "frozen", False):
-        for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
-            original = env.get(key + "_ORIG")
-            if original is None:
-                env.pop(key, None)
-            else:
-                env[key] = original
-    return env
-
-
-@contextmanager
-def _external_runtime():
-    """Keep bundled shared libraries out of an external Python interpreter's search path."""
-    frozen_windows = getattr(sys, "frozen", False) and sys.platform == "win32"
-    if frozen_windows:
-        import ctypes
-
-        ctypes.windll.kernel32.SetDllDirectoryW(None)
-    try:
-        yield
-    finally:
-        if frozen_windows:
-            ctypes.windll.kernel32.SetDllDirectoryW(sys._MEIPASS)
 
 
 def _run_embedded(arguments, project, env):
@@ -216,6 +214,8 @@ def main(argv: "typing.Union[typing.List[str], None]" = None) -> "int":
             else:
                 if not args.template:
                     parser.error("new requires TEMPLATE or --list")
+                if not args.install and (args.python or args.index_url):
+                    raise ValueError("new --python and --index-url require --install")
                 destination = create_project(
                     args.template,
                     args.name,
@@ -232,38 +232,41 @@ def main(argv: "typing.Union[typing.List[str], None]" = None) -> "int":
                     else destination
                 )
                 print(f'cd "{backend}"')
-                if not getattr(sys, "frozen", False):
-                    print('python -m pip install -e ".[dev]"')
+                if args.install:
+                    _install_project(backend, args.python, args.index_url)
+                elif not getattr(sys, "frozen", False):
+                    print("yuanbootctl-python install")
                 print("yuanbootctl-python run")
                 if args.template == "admin":
                     frontend = destination / (args.name + "-web")
                     print(f'Frontend: cd "{frontend}" && pnpm install && pnpm dev')
         elif args.command == "run":
             return _run(args)
+        elif args.command == "install":
+            _install_project(_project_directory(args.path), args.python, args.index_url)
         elif args.command == "build":
-            executable = args.python
-            if getattr(sys, "frozen", False) and not executable:
-                suffix = "Scripts/python.exe" if os.name == "nt" else "bin/python"
-                candidate = Path(args.path).expanduser().resolve() / ".venv" / suffix
-                if not candidate.is_file():
-                    raise ValueError(
-                        "build requires a Python environment: "
-                        "install build, then use --python /path/to/python"
-                    )
-                executable = str(candidate)
-            if not executable and importlib.util.find_spec("build") is None:
-                raise ValueError('Install the build tool first: python -m pip install "build>=1.2"')
-            command = [executable or sys.executable, "-m", "build"]
+            project = _project_directory(args.path)
+            if project != Path(args.path).expanduser().resolve():
+                print(f"Using Admin backend: {project}", flush=True)
+            with (project / "pyproject.toml").open("rb") as stream:
+                metadata = load_toml(stream)
+            executable = _prepare_environment(
+                project, metadata, args.python, args.index_url, build=True
+            )
+            command = [executable, "-m", "build"]
             for option in ("wheel", "sdist"):
                 if getattr(args, option):
                     command.append("--" + option)
             if args.outdir:
                 command.extend(["--outdir", args.outdir])
+            environment = _external_environment(os.environ)
+            if args.index_url:
+                environment["PIP_INDEX_URL"] = args.index_url
             with _external_runtime():
                 return _run_process(
                     command,
-                    cwd=Path(args.path).expanduser(),
-                    env=_external_environment(os.environ),
+                    cwd=project,
+                    env=environment,
                 )
         else:
             print_banner(cli=True)

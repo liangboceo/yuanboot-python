@@ -39,7 +39,9 @@ jobs:
           import tempfile
           import yuanboot
           from fastapi.testclient import TestClient
+          from yuanboot.cli import _dependencies_ready, _project_directory
           from yuanboot.cli.scaffolding import TEMPLATES, create_project
+          from yuanboot.compat import load_toml
           from yuanboot.web import create_default_builder
           from yuanboot.web.endpoints import use_actuator
           os.environ['YUANBOOT_YUANBOOT__LOGGING__CONSOLE'] = 'false'
@@ -47,7 +49,13 @@ jobs:
               if not module.name.endswith(('__main__', '.entrypoint')):
                   importlib.import_module(module.name)
           for template in TEMPLATES:
-              create_project(template, 'example_' + template, tempfile.mkdtemp())
+              project = create_project(template, 'example_' + template, tempfile.mkdtemp())
+              backend = _project_directory(project)
+              assert (backend / 'pyproject.toml').is_file()
+              with (backend / 'pyproject.toml').open('rb') as stream:
+                  metadata = load_toml(stream)
+              import sys
+              assert _dependencies_ready(sys.executable, metadata, backend, build=True)
           host = create_default_builder(use_actuator).build()
           with TestClient(host.app) as client:
               assert client.get('/actuator/health/detail').status_code == 200

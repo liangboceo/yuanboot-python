@@ -5,7 +5,7 @@
 ## 创建项目
 
 ```bash
-python -m pip install 'yuanbootctl-python[admin]==0.3.0'
+python -m pip install 'yuanbootctl-python[admin]==0.3.1'
 yuanbootctl-python new admin -n my-admin
 cd my-admin
 ```
@@ -47,6 +47,54 @@ pnpm dev
 - `my-admin-server/`：Python API、模型、业务服务、配置和离线框架文档。
 - `my-admin-web/`：管理前端，Vite 将 `/v1/` 代理到后端 8090 端口。
 - `spec/`：框架文档与管理模块开发约定。
+
+## 安装依赖与运行
+
+0.3.1 起，在管理后台项目根目录执行以下命令即可管理后端：
+
+```bash
+cd my-admin
+yuanbootctl-python install
+yuanbootctl-python run
+yuanbootctl-python build
+```
+
+CLI 自动定位 `my-admin-server/pyproject.toml`。`install` 在后端创建或复用 `.venv`，
+安装项目依赖与开发依赖；Python 3.6 / 3.7 自动选择兼容的 pip、build 和组件版本。
+`run` 会检查声明的依赖及组件 extras，缺失或版本不匹配时先安装再启动。
+`build` 同样检查依赖，并自动补齐构建工具。已有依赖完整的环境会直接复用。
+
+新建时可一次完成后端依赖安装：
+
+```bash
+yuanbootctl-python new admin -n my-admin --install
+```
+
+`install --python /path/to/python3.7` 可选择创建虚拟环境所用的解释器；
+`run --python` / `build --python` 可选择指定的运行环境，依赖缺失时安装到该环境。
+`--index-url` 可指定包索引，也会沿用已有 pip 配置和 `PIP_INDEX_URL` 环境变量。
+更改依赖后可执行 `install` 或 `run --install` 重新安装。
+
+前端在 `my-admin-web` 执行 `pnpm install --frozen-lockfile && pnpm dev`。
+
+## requirements.txt 与依赖维护
+
+仍可直接使用标准 pip 命令：
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+普通项目在项目根目录执行；Admin 在管理后台根目录或后端目录执行均可。
+生成的 requirements.txt 引用当前项目的 `[dev]` 依赖，不重复列出框架和组件版本。
+业务依赖可写在项目 pyproject.toml，也可追加到 requirements.txt；嵌套的 `-r` / `-c` 文件由 pip 解析。
+业务 wheel 的运行依赖以 pyproject.toml 为准；requirements.txt 可补充部署和开发环境依赖。
+CLI 会同时检查和安装 Admin 根目录、后端目录中的 requirements.txt，保留已有内容。
+旧模板缺少依赖文件时，`install` 会自动补齐，已有文件不会覆盖。
+
+框架组件及兼容版本统一在框架仓库的 pyproject.toml 维护。
+构建工具版本集中在 `yuanboot[build]`，生成项目的 `[dev]` 引用同版本的这一依赖组。
+脚手架只写入框架版本引用，安装流程共用 CLI 的 environment.py 实现。
 
 ## MySQL、Redis 与配置中心
 
