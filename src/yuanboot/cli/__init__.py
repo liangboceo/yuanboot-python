@@ -204,6 +204,12 @@ def _run_embedded(arguments, project, env):
 
 
 def main(argv: "typing.Union[typing.List[str], None]" = None) -> "int":
+    if os.name == "nt":
+        # Pipes on Windows otherwise use the ANSI code page, which cannot encode
+        # the framework logo or non-ASCII project paths.
+        for stream in (sys.stdout, sys.stderr):
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = _parser()
     args = parser.parse_args(argv)
     try:

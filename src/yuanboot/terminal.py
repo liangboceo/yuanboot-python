@@ -63,5 +63,14 @@ def banner(*, cli: "bool" = False, colors: "bool" = False) -> "str":
 
 def print_banner(*, cli: "bool" = False, mode: "ColorMode" = "auto", stream=None) -> "None":
     stream = sys.stdout if stream is None else stream
-    stream.write(banner(cli=cli, colors=use_color(mode, stream)))
+    text = banner(cli=cli, colors=use_color(mode, stream))
+    try:
+        stream.write(text)
+    except UnicodeEncodeError:
+        # Python 3.6 has no TextIOWrapper.reconfigure; retain the Unicode logo
+        # when its Windows output is redirected to a file or another process.
+        if not hasattr(stream, "buffer"):
+            raise
+        stream.flush()
+        stream.buffer.write(text.encode("utf-8"))
     stream.flush()
